@@ -52,6 +52,7 @@ export interface SessionSummary {
 export interface Session extends SessionSummary {
   messages: Message[];
   pending?: PendingRequest;
+  lastSeenAt: string;
 }
 
 export class SessionNotFoundError extends Error {
@@ -76,12 +77,14 @@ export class SessionStore extends EventEmitter {
   private sessions = new Map<string, Session>();
 
   createSession(id: string, clientName: string, userId: string, workspace: string): Session {
+    const now = new Date().toISOString();
     const session: Session = {
       id,
       clientName,
       userId,
       workspace,
-      connectedAt: new Date().toISOString(),
+      connectedAt: now,
+      lastSeenAt: now,
       status: 'idle',
       messages: [],
     };
@@ -90,15 +93,40 @@ export class SessionStore extends EventEmitter {
     return session;
   }
 
+  /** Atualiza o "último visto" de uma sessão — chamar a cada request que chega por ela. */
+  touchSession(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (session) session.lastSeenAt = new Date().toISOString();
+  }
+
   removeSession(sessionId: string): void {
     const session = this.sessions.get(sessionId);
-    if (!session) return;
+    if (!session || session.status === 'disconnected') return;
+    this.disconnectSession(session, 'Agente desconectado.');
+  }
+
+  /**
+   * Marca como desconectada qualquer sessão sem atividade (sem `touchSession`)
+   * há mais de `maxIdleMs`. Cobre o caso de o agente cair sem fechar a
+   * conexão de forma limpa (crash, queda de rede, processo morto).
+   */
+  sweepStaleSessions(maxIdleMs: number): void {
+    const now = Date.now();
+    for (const session of this.sessions.values()) {
+      if (session.status === 'disconnected') continue;
+      if (now - new Date(session.lastSeenAt).getTime() > maxIdleMs) {
+        this.disconnectSession(session, 'Agente desconectado (sem atividade).');
+      }
+    }
+  }
+
+  private disconnectSession(session: Session, message: string): void {
     if (session.pending) {
       session.pending.reject(new Error('Sessão desconectada antes de receber resposta.'));
       session.pending = undefined;
     }
     session.status = 'disconnected';
-    this.addMessage(sessionId, 'system', 'info', 'Agente desconectado.');
+    this.addMessage(session.id, 'system', 'info', message);
     this.emitSessionsChanged();
   }
 

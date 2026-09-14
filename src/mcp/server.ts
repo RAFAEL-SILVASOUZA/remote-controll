@@ -60,6 +60,7 @@ export function createMcpRouter(store: SessionStore, db: DatabaseSync, publicBas
     const existingId = typeof headerSessionId === 'string' ? headerSessionId : undefined;
 
     let transport = existingId ? transports.get(existingId) : undefined;
+    if (transport && existingId) store.touchSession(existingId);
 
     if (!transport) {
       if (existingId || !isInitializeRequest(req.body)) {
@@ -106,6 +107,7 @@ export function createMcpRouter(store: SessionStore, db: DatabaseSync, publicBas
       res.status(400).send('Sessão MCP inválida ou ausente.');
       return;
     }
+    if (sid) store.touchSession(sid);
     await transport.handleRequest(req, res);
   };
 

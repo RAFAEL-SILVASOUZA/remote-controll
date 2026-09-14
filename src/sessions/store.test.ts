@@ -79,3 +79,30 @@ test('resolvePendingRequest valida resposta de escolha múltipla', async () => {
   store.resolvePendingRequest('s5', requestId, { text: 'Maçã, Uva' });
   assert.deepEqual(await pendingPromise, { text: 'Maçã, Uva' });
 });
+
+test('sweepStaleSessions desconecta sessões inativas além do limite', () => {
+  const store = new SessionStore();
+  store.createSession('s6', 'Agente Teste', 'user-1', 'D:/ws');
+  const session = store.getSession('s6')!;
+  session.lastSeenAt = new Date(Date.now() - 10_000).toISOString();
+
+  store.sweepStaleSessions(5_000);
+  assert.equal(store.getSession('s6')?.status, 'disconnected');
+});
+
+test('sweepStaleSessions não mexe em sessão recém-ativa', () => {
+  const store = new SessionStore();
+  store.createSession('s7', 'Agente Teste', 'user-1', 'D:/ws');
+  store.sweepStaleSessions(60_000);
+  assert.equal(store.getSession('s7')?.status, 'idle');
+});
+
+test('touchSession atualiza lastSeenAt e evita desconexão pelo sweep', () => {
+  const store = new SessionStore();
+  store.createSession('s8', 'Agente Teste', 'user-1', 'D:/ws');
+  const session = store.getSession('s8')!;
+  session.lastSeenAt = new Date(Date.now() - 10_000).toISOString();
+  store.touchSession('s8');
+  store.sweepStaleSessions(5_000);
+  assert.equal(store.getSession('s8')?.status, 'idle');
+});
