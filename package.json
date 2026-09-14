@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p .",
-    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/db/users.test.ts src/db/tokens.test.ts src/db/pairing.test.ts src/db/webSessions.test.ts",
+    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/auth/pkce.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/oauthClients.test.ts src/db/oauthCodes.test.ts src/db/oauthTokens.test.ts",
     "test:client": "tsx scripts/test-client.ts"
   },
   "keywords": [],
