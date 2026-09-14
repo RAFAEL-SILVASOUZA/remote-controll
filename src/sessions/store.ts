@@ -36,6 +36,8 @@ export interface PendingRequest {
 export interface SessionSummary {
   id: string;
   clientName: string;
+  userId: string;
+  workspace: string;
   connectedAt: string;
   status: SessionStatus;
 }
@@ -60,10 +62,12 @@ export class PendingMismatchError extends Error {
 export class SessionStore extends EventEmitter {
   private sessions = new Map<string, Session>();
 
-  createSession(id: string, clientName: string): Session {
+  createSession(id: string, clientName: string, userId: string, workspace: string): Session {
     const session: Session = {
       id,
       clientName,
+      userId,
+      workspace,
       connectedAt: new Date().toISOString(),
       status: 'idle',
       messages: [],
@@ -85,13 +89,17 @@ export class SessionStore extends EventEmitter {
     this.emitSessionsChanged();
   }
 
-  listSessions(): SessionSummary[] {
-    return [...this.sessions.values()].map(({ id, clientName, connectedAt, status }) => ({
-      id,
-      clientName,
-      connectedAt,
-      status,
-    }));
+  listSessions(userId: string): SessionSummary[] {
+    return [...this.sessions.values()]
+      .filter((s) => s.userId === userId)
+      .map(({ id, clientName, userId: uid, workspace, connectedAt, status }) => ({
+        id,
+        clientName,
+        userId: uid,
+        workspace,
+        connectedAt,
+        status,
+      }));
   }
 
   getSession(id: string): Session | undefined {
@@ -145,6 +153,6 @@ export class SessionStore extends EventEmitter {
   }
 
   private emitSessionsChanged(): void {
-    this.emit('sessions-changed', this.listSessions());
+    this.emit('sessions-changed');
   }
 }
