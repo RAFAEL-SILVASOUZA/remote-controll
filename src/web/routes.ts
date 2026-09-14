@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { Response } from 'express';
 import { SessionNotFoundError, PendingMismatchError, InvalidAnswerError } from '../sessions/store.js';
 import type { AskHumanAnswer, ConfirmActionAnswer, PendingAnswer, Session, SessionStore } from '../sessions/store.js';
+import { requireWebAuthPage, requireWebAuthApi } from '../auth/webAuth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', '..', 'public');
@@ -38,19 +39,24 @@ export function createWebRouter(store: SessionStore): Router {
   const router = Router();
   router.use(express.json());
 
-  router.get('/session/:id', (req, res) => {
-    if (!store.getSession(req.params.id)) {
+  router.get('/', requireWebAuthPage, (_req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
+
+  router.get('/session/:id', requireWebAuthPage, (req, res) => {
+    const session = store.getSession(req.params.id as string);
+    if (!session || session.userId !== req.userId) {
       res.status(404).send('Sessão não encontrada.');
       return;
     }
     res.sendFile(path.join(publicDir, 'session.html'));
   });
 
-  router.get('/api/sessions', (req, res) => {
+  router.get('/api/sessions', requireWebAuthApi, (req, res) => {
     res.json(store.listSessions(req.userId!));
   });
 
-  router.get('/events', (req, res) => {
+  router.get('/events', requireWebAuthApi, (req, res) => {
     setupSse(res);
     const userId = req.userId!;
     const send = () => {
@@ -61,35 +67,41 @@ export function createWebRouter(store: SessionStore): Router {
     req.on('close', () => store.off('sessions-changed', send));
   });
 
-  router.get('/api/session/:id', (req, res) => {
-    const session = store.getSession(req.params.id);
-    if (!session) {
+  router.get('/api/session/:id', requireWebAuthApi, (req, res) => {
+    const session = store.getSession(req.params.id as string);
+    if (!session || session.userId !== req.userId) {
       res.status(404).json({ error: 'not_found' });
       return;
     }
     res.json(toSessionJson(session));
   });
 
-  router.get('/session/:id/events', (req, res) => {
-    const { id } = req.params;
-    if (!store.getSession(id)) {
+  router.get('/session/:id/events', requireWebAuthApi, (req, res) => {
+    const id = req.params.id as string;
+    const session = store.getSession(id);
+    if (!session || session.userId !== req.userId) {
       res.status(404).end();
       return;
     }
     setupSse(res);
     const onMessage = (payload: { sessionId: string; message: unknown }) => {
       if (payload.sessionId !== id) return;
-      const session = store.getSession(id);
+      const current = store.getSession(id);
       res.write(
-        `event: update\ndata: ${JSON.stringify({ message: payload.message, session: session ? toSessionJson(session) : null })}\n\n`,
+        `event: update\ndata: ${JSON.stringify({ message: payload.message, session: current ? toSessionJson(current) : null })}\n\n`,
       );
     };
     store.on('session-message', onMessage);
     req.on('close', () => store.off('session-message', onMessage));
   });
 
-  router.post('/api/session/:id/reply', (req, res) => {
-    const { id } = req.params;
+  router.post('/api/session/:id/reply', requireWebAuthApi, (req, res) => {
+    const id = req.params.id as string;
+    const session = store.getSession(id);
+    if (!session || session.userId !== req.userId) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const { requestId, ...rest } = req.body ?? {};
     try {
       let answer: PendingAnswer;

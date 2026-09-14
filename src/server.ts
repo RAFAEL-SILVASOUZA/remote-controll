@@ -20,7 +20,7 @@ app.use(createAuthRouter(db));
 app.use(createPairingRouter(db, publicBaseUrl));
 app.use('/mcp', createMcpRouter(store, db));
 app.use(createWebRouter(store));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), { index: false }));
 
 const port = Number(process.env.PORT) || 5002;
 app.listen(port, () => {
