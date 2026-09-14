@@ -1,0 +1,14 @@
+services:
+  remote-controll:
+    build: .
+    image: remote-controll:latest
+    container_name: remote-controll
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:5002:5002"
+    environment:
+      - PORT=5002
+      - DB_PATH=/app/data/data.sqlite
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-https://remote.rafael-silva-souza.dev}
+    volumes:
+      - ./data.sqlite:/app/data/data.sqlite

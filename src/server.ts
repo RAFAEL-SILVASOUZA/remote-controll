@@ -15,6 +15,14 @@ const store = new SessionStore();
 const app = express();
 const publicBaseUrl = process.env.PUBLIC_BASE_URL ?? 'https://remote.rafael-silva-souza.dev';
 
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+  });
+  next();
+});
+
 app.use(attachUser(db));
 app.use(createAuthRouter(db));
 app.use(createOAuthRouter(db, publicBaseUrl));
