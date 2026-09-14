@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { DatabaseSync } from 'node:sqlite';
-import { findUserIdByToken } from '../db/tokens.js';
+import { findUserIdByAccessToken } from '../db/oauthTokens.js';
 
 function extractBearerToken(req: Request): string | undefined {
   const header = req.headers.authorization;
@@ -8,12 +8,16 @@ function extractBearerToken(req: Request): string | undefined {
   return header.slice('Bearer '.length).trim();
 }
 
-export function requireMcpAuth(db: DatabaseSync) {
+export function requireMcpAuth(db: DatabaseSync, publicBaseUrl: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const token = extractBearerToken(req);
-    const userId = token ? findUserIdByToken(db, token) : undefined;
+    const userId = token ? findUserIdByAccessToken(db, token) : undefined;
     if (!userId) {
-      res.status(401).json({ error: 'authentication_required', pairingStartUrl: '/api/mcp/pairing/start' });
+      res.setHeader(
+        'WWW-Authenticate',
+        `Bearer resource_metadata="${publicBaseUrl}/.well-known/oauth-protected-resource"`,
+      );
+      res.status(401).json({ error: 'invalid_token' });
       return;
     }
     req.userId = userId;

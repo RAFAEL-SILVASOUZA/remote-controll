@@ -48,10 +48,10 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
   return { server, setSessionId: (id: string) => { sessionId = id; } };
 }
 
-export function createMcpRouter(store: SessionStore, db: DatabaseSync): Router {
+export function createMcpRouter(store: SessionStore, db: DatabaseSync, publicBaseUrl: string): Router {
   const router = Router();
   router.use(express.json());
-  router.use(requireMcpAuth(db));
+  router.use(requireMcpAuth(db, publicBaseUrl));
 
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
