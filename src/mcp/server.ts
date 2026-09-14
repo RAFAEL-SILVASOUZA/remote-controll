@@ -15,12 +15,12 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
 
   server.tool(
     'ask_human',
-    'Pergunta algo ao humano responsável. Texto livre por padrão; se "options" for informado, o humano escolhe entre elas (uma única, ou várias se "multiple" for true).',
+    'Envia uma pergunta para o humano responsável, que recebe e responde pelo painel de controle remoto. Use quando precisar de uma informação, decisão ou preferência que só o humano sabe. Por padrão o humano responde em texto livre; informe "options" para transformar em múltipla escolha.',
     {
-      question: z.string(),
-      context: z.string().optional(),
-      options: z.array(z.string()).optional(),
-      multiple: z.boolean().optional(),
+      question: z.string().describe('A pergunta exibida ao humano. Seja claro e direto — é a única coisa que ele vê de imediato.'),
+      context: z.string().optional().describe('Informações extras para o humano entender a pergunta (ex.: o que está sendo feito, por quê). Opcional.'),
+      options: z.array(z.string()).optional().describe('Lista de alternativas para o humano escolher, em vez de digitar uma resposta livre. Opcional — omita para pergunta de texto livre.'),
+      multiple: z.boolean().optional().describe('Se true, o humano pode selecionar mais de uma opção em "options". Só tem efeito quando "options" é informado. Padrão: false (escolha única).'),
     },
     async ({ question, context, options, multiple }) => {
       if (!sessionId) throw new Error('Sessão MCP ainda não inicializada.');
@@ -32,8 +32,11 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
 
   server.tool(
     'confirm_action',
-    'Pede confirmação (aprovar/rejeitar) de uma ação antes de executá-la.',
-    { description: z.string(), details: z.string().optional() },
+    'Pede ao humano para aprovar ou rejeitar uma ação antes de executá-la. Use antes de qualquer ação sensível, destrutiva ou irreversível (ex.: apagar dados, enviar algo publicamente, gastar dinheiro) para obter permissão explícita.',
+    {
+      description: z.string().describe('Descrição curta e clara da ação que precisa de aprovação (ex.: "Apagar a tabela de usuários de teste").'),
+      details: z.string().optional().describe('Detalhes adicionais para o humano avaliar a ação (ex.: escopo, impacto, alternativas consideradas). Opcional.'),
+    },
     async ({ description, details }) => {
       if (!sessionId) throw new Error('Sessão MCP ainda não inicializada.');
       const text = details ? `${description}\n\n${details}` : description;

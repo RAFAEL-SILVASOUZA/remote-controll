@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { DatabaseSync } from 'node:sqlite';
-import { registerClient, findClient } from '../db/oauthClients.js';
+import { registerClient, findClient, hasApproval, recordApproval } from '../db/oauthClients.js';
 import { createAuthorizationCode, consumeAuthorizationCode } from '../db/oauthCodes.js';
 import { issueTokens, rotateRefreshToken } from '../db/oauthTokens.js';
 import { verifyPkce } from '../auth/pkce.js';
@@ -60,7 +60,7 @@ export function createOAuthRouter(db: DatabaseSync, publicBaseUrl: string): Rout
   });
 
   router.get('/oauth/authorize', requireWebAuthPage, (req, res) => {
-    const { client_id, redirect_uri } = req.query;
+    const { client_id, redirect_uri, code_challenge, code_challenge_method, state } = req.query;
     if (typeof client_id !== 'string' || typeof redirect_uri !== 'string') {
       res.status(400).send('Requisição de autorização inválida.');
       return;
@@ -70,6 +70,30 @@ export function createOAuthRouter(db: DatabaseSync, publicBaseUrl: string): Rout
       res.status(400).send('Client ou redirect_uri desconhecido.');
       return;
     }
+
+    // Client já aprovado por este usuário antes: pula a tela de consentimento
+    // e completa o redirect na hora. Evita perder a corrida contra o timeout
+    // de retry de clientes MCP (ex.: mcp-remote), que reabrem o fluxo do zero
+    // se o humano não conseguir clicar "Aprovar" a tempo.
+    if (
+      typeof code_challenge === 'string' &&
+      typeof code_challenge_method === 'string' &&
+      hasApproval(db, client_id, req.userId!)
+    ) {
+      const authCode = createAuthorizationCode(db, {
+        clientId: client_id,
+        userId: req.userId!,
+        redirectUri: redirect_uri,
+        codeChallenge: code_challenge,
+        codeChallengeMethod: code_challenge_method,
+      });
+      const redirectUrl = new URL(redirect_uri);
+      redirectUrl.searchParams.set('code', authCode.code);
+      if (typeof state === 'string') redirectUrl.searchParams.set('state', state);
+      res.redirect(redirectUrl.toString());
+      return;
+    }
+
     res.sendFile(path.join(publicDir, 'authorize.html'));
   });
 
@@ -112,6 +136,7 @@ export function createOAuthRouter(db: DatabaseSync, publicBaseUrl: string): Rout
       return;
     }
 
+    recordApproval(db, client_id, req.userId!);
     const authCode = createAuthorizationCode(db, {
       clientId: client_id,
       userId: req.userId!,

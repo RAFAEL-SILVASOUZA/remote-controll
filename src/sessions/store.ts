@@ -101,7 +101,7 @@ export class SessionStore extends EventEmitter {
 
   removeSession(sessionId: string): void {
     const session = this.sessions.get(sessionId);
-    if (!session || session.status === 'disconnected') return;
+    if (!session) return;
     this.disconnectSession(session, 'Agente desconectado.');
   }
 
@@ -113,13 +113,16 @@ export class SessionStore extends EventEmitter {
   sweepStaleSessions(maxIdleMs: number): void {
     const now = Date.now();
     for (const session of this.sessions.values()) {
-      if (session.status === 'disconnected') continue;
       if (now - new Date(session.lastSeenAt).getTime() > maxIdleMs) {
         this.disconnectSession(session, 'Agente desconectado (sem atividade).');
       }
     }
   }
 
+  /**
+   * Sessões desconectadas não ficam de "histórico": o agente some da lista
+   * assim que cai, em vez de acumular como card fantasma para sempre.
+   */
   private disconnectSession(session: Session, message: string): void {
     if (session.pending) {
       session.pending.reject(new Error('Sessão desconectada antes de receber resposta.'));
@@ -127,6 +130,7 @@ export class SessionStore extends EventEmitter {
     }
     session.status = 'disconnected';
     this.addMessage(session.id, 'system', 'info', message);
+    this.sessions.delete(session.id);
     this.emitSessionsChanged();
   }
 

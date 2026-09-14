@@ -42,3 +42,17 @@ export function findClient(db: DatabaseSync, clientId: string): OAuthClient | un
     .get(clientId) as ClientRow | undefined;
   return row ? toClient(row) : undefined;
 }
+
+/** Lembra que este usuário já aprovou este client, para pular a tela de consentimento nas próximas conexões. */
+export function recordApproval(db: DatabaseSync, clientId: string, userId: string): void {
+  db.prepare(
+    'INSERT OR IGNORE INTO oauth_client_approvals (client_id, user_id, created_at) VALUES (?, ?, ?)',
+  ).run(clientId, userId, new Date().toISOString());
+}
+
+export function hasApproval(db: DatabaseSync, clientId: string, userId: string): boolean {
+  const row = db
+    .prepare('SELECT 1 FROM oauth_client_approvals WHERE client_id = ? AND user_id = ?')
+    .get(clientId, userId);
+  return row !== undefined;
+}

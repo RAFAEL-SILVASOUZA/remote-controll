@@ -28,6 +28,13 @@ export function createDb(dbPath: string): DatabaseSync {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS oauth_client_approvals (
+      client_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (client_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
       code TEXT PRIMARY KEY,
       client_id TEXT NOT NULL,

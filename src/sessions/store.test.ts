@@ -39,7 +39,16 @@ test('removeSession rejeita a pending request em aberto', async () => {
   store.removeSession('s3');
 
   await assert.rejects(pendingPromise, /desconectada/);
-  assert.equal(store.getSession('s3')?.status, 'disconnected');
+  assert.equal(store.getSession('s3'), undefined);
+});
+
+test('removeSession não deixa a sessão pendurada como "disconnected" na listagem', () => {
+  const store = new SessionStore();
+  store.createSession('s3b', 'Agente Teste', 'user-1', 'D:/ws');
+
+  store.removeSession('s3b');
+
+  assert.deepEqual(store.listSessions('user-1'), []);
 });
 
 test('listSessions só retorna sessões do userId informado', () => {
@@ -87,7 +96,7 @@ test('sweepStaleSessions desconecta sessões inativas além do limite', () => {
   session.lastSeenAt = new Date(Date.now() - 10_000).toISOString();
 
   store.sweepStaleSessions(5_000);
-  assert.equal(store.getSession('s6')?.status, 'disconnected');
+  assert.equal(store.getSession('s6'), undefined);
 });
 
 test('sweepStaleSessions não mexe em sessão recém-ativa', () => {
