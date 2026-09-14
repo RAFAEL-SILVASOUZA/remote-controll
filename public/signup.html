@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>remote-controll — Cadastro</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="auth-page">
+  <form id="signup-form" class="auth-card">
+    <h1>Criar conta</h1>
+    <label>E-mail<input type="email" id="email" required /></label>
+    <label>Senha<input type="password" id="password" minlength="8" required /></label>
+    <label>Confirmar senha<input type="password" id="confirmPassword" minlength="8" required /></label>
+    <button type="submit">Cadastrar</button>
+    <p id="error" class="error" hidden></p>
+    <p class="auth-switch">Já tem conta? <a href="/login">Entrar</a></p>
+  </form>
+  <script src="/signup.js"></script>
+</body>
+</html>
