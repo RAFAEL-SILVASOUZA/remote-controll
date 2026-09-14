@@ -15,12 +15,17 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
 
   server.tool(
     'ask_human',
-    'Pergunta algo em texto livre para o humano responsável e espera a resposta.',
-    { question: z.string(), context: z.string().optional() },
-    async ({ question, context }) => {
+    'Pergunta algo ao humano responsável. Texto livre por padrão; se "options" for informado, o humano escolhe entre elas (uma única, ou várias se "multiple" for true).',
+    {
+      question: z.string(),
+      context: z.string().optional(),
+      options: z.array(z.string()).optional(),
+      multiple: z.boolean().optional(),
+    },
+    async ({ question, context, options, multiple }) => {
       if (!sessionId) throw new Error('Sessão MCP ainda não inicializada.');
       const text = context ? `${question}\n\n(${context})` : question;
-      const answer = (await store.createPendingRequest(sessionId, 'ask_human', text)) as AskHumanAnswer;
+      const answer = (await store.createPendingRequest(sessionId, 'ask_human', text, { options, multiple })) as AskHumanAnswer;
       return { content: [{ type: 'text' as const, text: answer.text }] };
     },
   );

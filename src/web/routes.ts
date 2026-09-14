@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Response } from 'express';
-import { SessionNotFoundError, PendingMismatchError } from '../sessions/store.js';
+import { SessionNotFoundError, PendingMismatchError, InvalidAnswerError } from '../sessions/store.js';
 import type { AskHumanAnswer, ConfirmActionAnswer, PendingAnswer, Session, SessionStore } from '../sessions/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -13,10 +13,17 @@ function toSessionJson(session: Session) {
   return {
     id: session.id,
     clientName: session.clientName,
-    connectedAt: session.connectedAt,
+    workspace: session.workspace,
     status: session.status,
     messages: session.messages,
-    pending: session.pending ? { id: session.pending.id, kind: session.pending.kind } : null,
+    pending: session.pending
+      ? {
+          id: session.pending.id,
+          kind: session.pending.kind,
+          options: session.pending.options,
+          multiple: session.pending.multiple,
+        }
+      : null,
   };
 }
 
@@ -39,16 +46,17 @@ export function createWebRouter(store: SessionStore): Router {
     res.sendFile(path.join(publicDir, 'session.html'));
   });
 
-  router.get('/api/sessions', (_req, res) => {
-    res.json(store.listSessions());
+  router.get('/api/sessions', (req, res) => {
+    res.json(store.listSessions(req.userId!));
   });
 
   router.get('/events', (req, res) => {
     setupSse(res);
-    const send = (sessions: ReturnType<SessionStore['listSessions']>) => {
-      res.write(`event: sessions\ndata: ${JSON.stringify(sessions)}\n\n`);
+    const userId = req.userId!;
+    const send = () => {
+      res.write(`event: sessions\ndata: ${JSON.stringify(store.listSessions(userId))}\n\n`);
     };
-    send(store.listSessions());
+    send();
     store.on('sessions-changed', send);
     req.on('close', () => store.off('sessions-changed', send));
   });
@@ -97,6 +105,8 @@ export function createWebRouter(store: SessionStore): Router {
         res.status(404).json({ error: 'session_not_found' });
       } else if (err instanceof PendingMismatchError) {
         res.status(409).json({ error: 'pending_mismatch' });
+      } else if (err instanceof InvalidAnswerError) {
+        res.status(400).json({ error: 'invalid_answer' });
       } else {
         throw err;
       }

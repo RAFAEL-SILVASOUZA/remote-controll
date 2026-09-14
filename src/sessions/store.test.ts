@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SessionStore, PendingMismatchError, SessionNotFoundError } from './store.js';
+import { SessionStore, PendingMismatchError, SessionNotFoundError, InvalidAnswerError } from './store.js';
 
 test('createPendingRequest resolves via resolvePendingRequest with matching requestId', async () => {
   const store = new SessionStore();
@@ -51,4 +51,31 @@ test('listSessions só retorna sessões do userId informado', () => {
   assert.equal(forUser1.length, 1);
   assert.equal(forUser1[0].id, 'sa');
   assert.equal(forUser1[0].workspace, 'D:/ws-a');
+});
+
+test('resolvePendingRequest valida resposta de escolha única', async () => {
+  const store = new SessionStore();
+  store.createSession('s4', 'Agente Teste', 'user-1', 'D:/ws');
+  const pendingPromise = store.createPendingRequest('s4', 'ask_human', 'Qual cor?', {
+    options: ['Vermelho', 'Azul'],
+  });
+  const requestId = store.getSession('s4')!.pending!.id;
+
+  assert.throws(() => store.resolvePendingRequest('s4', requestId, { text: 'Verde' }), InvalidAnswerError);
+
+  store.resolvePendingRequest('s4', requestId, { text: 'Azul' });
+  assert.deepEqual(await pendingPromise, { text: 'Azul' });
+});
+
+test('resolvePendingRequest valida resposta de escolha múltipla', async () => {
+  const store = new SessionStore();
+  store.createSession('s5', 'Agente Teste', 'user-1', 'D:/ws');
+  const pendingPromise = store.createPendingRequest('s5', 'ask_human', 'Quais frutas?', {
+    options: ['Maçã', 'Banana', 'Uva'],
+    multiple: true,
+  });
+  const requestId = store.getSession('s5')!.pending!.id;
+
+  store.resolvePendingRequest('s5', requestId, { text: 'Maçã, Uva' });
+  assert.deepEqual(await pendingPromise, { text: 'Maçã, Uva' });
 });

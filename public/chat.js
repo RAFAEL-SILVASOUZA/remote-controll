@@ -20,25 +20,53 @@ function renderReplyArea(session) {
     return;
   }
 
-  if (session.pending.kind === 'ask_human') {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Digite sua resposta...';
-    const button = document.createElement('button');
-    button.textContent = 'Enviar';
-    button.onclick = () => sendReply({ requestId: session.pending.id, text: input.value });
-    replyArea.appendChild(input);
-    replyArea.appendChild(button);
-  } else {
+  if (session.pending.kind === 'confirm_action') {
     const approve = document.createElement('button');
     approve.textContent = 'Aprovar';
     approve.onclick = () => sendReply({ requestId: session.pending.id, approved: true });
     const reject = document.createElement('button');
     reject.textContent = 'Rejeitar';
+    reject.className = 'secondary';
     reject.onclick = () => sendReply({ requestId: session.pending.id, approved: false });
     replyArea.appendChild(approve);
     replyArea.appendChild(reject);
+    return;
   }
+
+  if (session.pending.options && session.pending.options.length > 0) {
+    const list = document.createElement('div');
+    list.className = 'options-list';
+    const inputType = session.pending.multiple ? 'checkbox' : 'radio';
+    for (const option of session.pending.options) {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = inputType;
+      input.name = 'option';
+      input.value = option;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(option));
+      list.appendChild(label);
+    }
+    const button = document.createElement('button');
+    button.textContent = 'Enviar';
+    button.onclick = () => {
+      const checked = [...list.querySelectorAll('input:checked')].map((el) => el.value);
+      if (checked.length === 0) return;
+      sendReply({ requestId: session.pending.id, text: checked.join(', ') });
+    };
+    replyArea.appendChild(list);
+    replyArea.appendChild(button);
+    return;
+  }
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'Digite sua resposta...';
+  const button = document.createElement('button');
+  button.textContent = 'Enviar';
+  button.onclick = () => sendReply({ requestId: session.pending.id, text: input.value });
+  replyArea.appendChild(input);
+  replyArea.appendChild(button);
 }
 
 async function sendReply(body) {
