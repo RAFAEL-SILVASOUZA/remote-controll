@@ -38,7 +38,7 @@
 
 **Interfaces:**
 - Produces (used by Task 2 onward):
-  - `createDb(dbPath: string): DatabaseSync` and `db: DatabaseSync` (default instance) from `src/db/index.ts`.
+  - `createDb(dbPath: string): DatabaseSync` and `defaultDbPath(): string` from `src/db/index.ts`. No module-level `db` singleton — building it is left to `server.ts` (Task 2), so merely importing `db/index.ts` (as every `db/*.test.ts` does) never touches the real on-disk database file. `node --test` runs test files concurrently in separate processes; a module-level `createDb(defaultDbPath())` side effect caused a real "database is locked" `SQLITE_BUSY` failure when multiple test files imported it at once — confirmed while implementing, keep it lazy.
   - `createUser(db, email, passwordHash): User`, `findUserByEmail(db, email): User | undefined`, `findUserById(db, id): User | undefined`, `class EmailAlreadyRegisteredError` from `src/db/users.ts`. `User = { id, email, passwordHash, createdAt }`.
   - `createToken(db, userId): { token: string; expiresAt: string }`, `findUserIdByToken(db, token): string | undefined` from `src/db/tokens.ts`.
   - `createPairing(db, workspace?): PairingRequest`, `getPairing(db, code): PairingRequest | undefined`, `isPairingExpired(pairing): boolean`, `approvePairing(db, code, userId): PairingRequest`, `rejectPairing(db, code): PairingRequest`, `class PairingNotPendingError` from `src/db/pairing.ts`. `PairingRequest = { code, status: 'pending'|'approved'|'rejected', userId?, token?, workspace?, createdAt, expiresAt }`.
@@ -91,8 +91,9 @@ export function createDb(dbPath: string): DatabaseSync {
   return db;
 }
 
-const defaultDbPath = process.env.DB_PATH ?? path.join(__dirname, '..', '..', 'data.sqlite');
-export const db = createDb(defaultDbPath);
+export function defaultDbPath(): string {
+  return process.env.DB_PATH ?? path.join(__dirname, '..', '..', 'data.sqlite');
+}
 ```
 
 - [ ] **Step 2: Create `src/db/users.ts`**
@@ -809,7 +810,7 @@ Replace the full contents with:
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from './db/index.js';
+import { createDb, defaultDbPath } from './db/index.js';
 import { attachUser } from './auth/webAuth.js';
 import { createAuthRouter } from './web/authRoutes.js';
 import { SessionStore } from './sessions/store.js';
@@ -817,6 +818,7 @@ import { createMcpRouter } from './mcp/server.js';
 import { createWebRouter } from './web/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const db = createDb(defaultDbPath());
 const store = new SessionStore();
 const app = express();
 
@@ -1213,7 +1215,8 @@ export function createPairingRouter(db: DatabaseSync, publicBaseUrl: string): Ro
   });
 
   router.get('/pair/:code', requireWebAuthPage, (req, res) => {
-    const pairing = getPairing(db, req.params.code);
+    const code = req.params.code as string;
+    const pairing = getPairing(db, code);
     if (!pairing || isPairingExpired(pairing)) {
       res.status(404).send('Código de pareamento inválido ou expirado.');
       return;
@@ -1222,7 +1225,8 @@ export function createPairingRouter(db: DatabaseSync, publicBaseUrl: string): Ro
   });
 
   router.get('/api/pair/:code', requireWebAuthApi, (req, res) => {
-    const pairing = getPairing(db, req.params.code);
+    const code = req.params.code as string;
+    const pairing = getPairing(db, code);
     if (!pairing || isPairingExpired(pairing)) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -1231,8 +1235,9 @@ export function createPairingRouter(db: DatabaseSync, publicBaseUrl: string): Ro
   });
 
   router.post('/api/pair/:code/approve', requireWebAuthApi, (req, res) => {
+    const code = req.params.code as string;
     try {
-      approvePairing(db, req.params.code, req.userId!);
+      approvePairing(db, code, req.userId!);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof PairingNotPendingError) {
@@ -1244,8 +1249,9 @@ export function createPairingRouter(db: DatabaseSync, publicBaseUrl: string): Ro
   });
 
   router.post('/api/pair/:code/reject', requireWebAuthApi, (req, res) => {
+    const code = req.params.code as string;
     try {
-      rejectPairing(db, req.params.code);
+      rejectPairing(db, code);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof PairingNotPendingError) {
@@ -1452,7 +1458,7 @@ Replace the full contents with:
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from './db/index.js';
+import { createDb, defaultDbPath } from './db/index.js';
 import { attachUser } from './auth/webAuth.js';
 import { createAuthRouter } from './web/authRoutes.js';
 import { createPairingRouter } from './web/pairingRoutes.js';
@@ -1461,6 +1467,7 @@ import { createMcpRouter } from './mcp/server.js';
 import { createWebRouter } from './web/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const db = createDb(defaultDbPath());
 const store = new SessionStore();
 const app = express();
 const publicBaseUrl = process.env.PUBLIC_BASE_URL ?? 'http://localhost:5002';
@@ -2118,7 +2125,7 @@ export function createWebRouter(store: SessionStore): Router {
   });
 
   router.get('/session/:id', requireWebAuthPage, (req, res) => {
-    const session = store.getSession(req.params.id);
+    const session = store.getSession(req.params.id as string);
     if (!session || session.userId !== req.userId) {
       res.status(404).send('Sessão não encontrada.');
       return;
@@ -2142,7 +2149,7 @@ export function createWebRouter(store: SessionStore): Router {
   });
 
   router.get('/api/session/:id', requireWebAuthApi, (req, res) => {
-    const session = store.getSession(req.params.id);
+    const session = store.getSession(req.params.id as string);
     if (!session || session.userId !== req.userId) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -2151,7 +2158,7 @@ export function createWebRouter(store: SessionStore): Router {
   });
 
   router.get('/session/:id/events', requireWebAuthApi, (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const session = store.getSession(id);
     if (!session || session.userId !== req.userId) {
       res.status(404).end();
@@ -2170,7 +2177,7 @@ export function createWebRouter(store: SessionStore): Router {
   });
 
   router.post('/api/session/:id/reply', requireWebAuthApi, (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const session = store.getSession(id);
     if (!session || session.userId !== req.userId) {
       res.status(404).json({ error: 'not_found' });
@@ -2203,6 +2210,8 @@ export function createWebRouter(store: SessionStore): Router {
 }
 ```
 
+Note: every `req.params.id` above is cast `as string`. The installed `@types/express-serve-static-core` types route params as `string | string[]`, and — confirmed while implementing — when a route is registered with a middleware handler before the final callback (e.g. `router.get(path, requireWebAuthPage, (req, res) => ...)`), TS's overload resolution stops picking up the narrower per-route param type and falls back to that wider union, so `req.params.id` no longer satisfies `getSession(id: string)` without the cast. Routes with only `(path, handler)` — no middleware in between — don't need it.
+
 - [ ] **Step 2: Update `src/server.ts` — serve `/` only through the authenticated route**
 
 `express.static` must not auto-serve `public/index.html` at `/` (that would bypass `requireWebAuthPage`). Change the static-files line to disable its automatic `index.html` lookup. Replace the full contents of `src/server.ts` with:
@@ -2211,7 +2220,7 @@ export function createWebRouter(store: SessionStore): Router {
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from './db/index.js';
+import { createDb, defaultDbPath } from './db/index.js';
 import { attachUser } from './auth/webAuth.js';
 import { createAuthRouter } from './web/authRoutes.js';
 import { createPairingRouter } from './web/pairingRoutes.js';
@@ -2220,6 +2229,7 @@ import { createMcpRouter } from './mcp/server.js';
 import { createWebRouter } from './web/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const db = createDb(defaultDbPath());
 const store = new SessionStore();
 const app = express();
 const publicBaseUrl = process.env.PUBLIC_BASE_URL ?? 'http://localhost:5002';
