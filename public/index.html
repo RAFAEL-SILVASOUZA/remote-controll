@@ -6,9 +6,14 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Sessões conectadas</h1>
-  <ul id="sessions"></ul>
-  <p id="empty" hidden>Nenhum agente conectado ainda.</p>
+  <header class="topbar">
+    <h1>Sessões conectadas</h1>
+    <button id="logout" class="secondary">Sair</button>
+  </header>
+  <main class="page">
+    <ul id="sessions" class="session-list"></ul>
+    <p id="empty" hidden>Nenhum agente conectado ainda.</p>
+  </main>
   <script src="/sessions.js"></script>
 </body>
 </html>

@@ -6,9 +6,14 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <p><a href="/">&larr; Sessões</a></p>
-  <div id="messages"></div>
-  <div id="reply-area"></div>
+  <header class="topbar">
+    <h1><a href="/">&larr; Sessões</a></h1>
+    <button id="logout" class="secondary">Sair</button>
+  </header>
+  <main class="page">
+    <div id="messages"></div>
+    <div id="reply-area"></div>
+  </main>
   <script src="/chat.js"></script>
 </body>
 </html>

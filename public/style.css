@@ -1,7 +1,73 @@
-body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
-#messages { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-.message { padding: 0.5rem; border-radius: 0.5rem; background: #f0f0f0; }
-.message-human { background: #d7e9ff; align-self: flex-end; }
-.message-system { background: #ffe0e0; font-style: italic; }
-.error { color: #c00; margin-top: 0.5rem; }
-#reply-area { display: flex; gap: 0.5rem; }
+:root {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-border: #dfe3e8;
+  --color-text: #1f2430;
+  --color-muted: #6b7280;
+  --color-primary: #4338ca;
+  --color-primary-hover: #3730a3;
+  --color-danger: #b91c1c;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbar h1 { font-size: 1.1rem; margin: 0; }
+.topbar a { color: inherit; text-decoration: none; }
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.session-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.session-list li { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.session-list a { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.1rem; text-decoration: none; color: var(--color-text); gap: 0.75rem; }
+.session-list .workspace { font-size: 0.8rem; color: var(--color-muted); display: block; }
+
+.badge { font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+.badge-idle { background: #e5e7eb; color: #374151; }
+.badge-waiting { background: #fef3c7; color: #92400e; }
+.badge-disconnected { background: #fee2e2; color: #991b1b; }
+
+#messages { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
+.message { padding: 0.65rem 0.9rem; border-radius: var(--radius); background: var(--color-surface); border: 1px solid var(--color-border); max-width: 80%; }
+.message-agent { align-self: flex-start; }
+.message-human { align-self: flex-end; background: #eef2ff; border-color: #c7d2fe; }
+.message-system { align-self: center; font-style: italic; color: var(--color-muted); background: transparent; border: none; }
+
+#reply-area { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+#reply-area input[type="text"] { flex: 1; padding: 0.55rem 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.95rem; }
+.options-list { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+.options-list label { display: flex; align-items: center; gap: 0.5rem; }
+
+button { background: var(--color-primary); color: white; border: none; border-radius: var(--radius); padding: 0.55rem 1.1rem; font-size: 0.95rem; cursor: pointer; }
+button:hover { background: var(--color-primary-hover); }
+button.secondary { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); }
+
+.auth-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+.auth-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 2rem; width: 320px; display: flex; flex-direction: column; gap: 0.9rem; }
+.auth-card h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+.auth-card label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; color: var(--color-muted); }
+.auth-card input { padding: 0.55rem 0.7rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.95rem; }
+.auth-switch { font-size: 0.85rem; text-align: center; color: var(--color-muted); margin: 0; }
+
+.error { color: var(--color-danger); font-size: 0.85rem; margin: 0; }
