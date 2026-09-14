@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
+import type { DatabaseSync } from 'node:sqlite';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import type { AskHumanAnswer, ConfirmActionAnswer, SessionStore } from '../sessions/store.js';
+import { requireMcpAuth } from '../auth/mcpAuth.js';
 
 function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId: (id: string) => void } {
   let sessionId: string | undefined;
@@ -41,9 +43,10 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
   return { server, setSessionId: (id: string) => { sessionId = id; } };
 }
 
-export function createMcpRouter(store: SessionStore): Router {
+export function createMcpRouter(store: SessionStore, db: DatabaseSync): Router {
   const router = Router();
   router.use(express.json());
+  router.use(requireMcpAuth(db));
 
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
@@ -63,6 +66,8 @@ export function createMcpRouter(store: SessionStore): Router {
         return;
       }
 
+      const userId = req.userId!;
+      const workspace = req.workspace ?? 'Desconhecido';
       const { server, setSessionId } = buildMcpServer(store);
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
@@ -70,7 +75,7 @@ export function createMcpRouter(store: SessionStore): Router {
           transports.set(sid, transport!);
           setSessionId(sid);
           const clientName = server.server.getClientVersion()?.name ?? 'Agente';
-          store.createSession(sid, clientName);
+          store.createSession(sid, clientName, userId, workspace);
         },
       });
 
