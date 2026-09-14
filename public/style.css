@@ -1,0 +1,7 @@
+body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+#messages { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.message { padding: 0.5rem; border-radius: 0.5rem; background: #f0f0f0; }
+.message-human { background: #d7e9ff; align-self: flex-end; }
+.message-system { background: #ffe0e0; font-style: italic; }
+.error { color: #c00; margin-top: 0.5rem; }
+#reply-area { display: flex; gap: 0.5rem; }
