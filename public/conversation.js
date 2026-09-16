@@ -88,17 +88,16 @@ function renderAgentEntry(entry) {
   return wrapper;
 }
 
-const ACTIVITY_LABEL = { tool_call: 'Executando', tool_result: 'Concluído', diff: 'Alterado', info: '' };
-
 function activityState(kind) {
   return kind === 'tool_call' ? 'running' : 'done';
 }
 
 function fillActivityNode(node, entry) {
   node.dataset.kind = entry.kind;
+  // Estado (rodando/feito) já é o ponto colorido; texto de vide-code costuma
+  // já vir com o nome da ferramenta, então prefixo tipo "Executando: " só duplicava.
   node.className = `activity-item activity-${activityState(entry.kind)}`;
-  const label = ACTIVITY_LABEL[entry.kind] || '';
-  node.textContent = label ? `${label}: ${entry.text}` : entry.text;
+  node.textContent = entry.text;
 }
 
 function targetContainerFor(entry) {
@@ -146,6 +145,14 @@ function upsertActivity(entry) {
   const existing = activityNodes.get(entry.id);
   if (existing) {
     fillActivityNode(existing, entry);
+    // A live tool-call can arrive untagged and only get its subagent id once
+    // the subagent's card exists in vide-code's DOM; move it into the right
+    // group instead of leaving it stuck wherever it first landed.
+    const container = targetContainerFor(entry);
+    if (existing.parentElement !== container) {
+      if (container === messagesEl) insertAtEnd(existing);
+      else container.appendChild(existing);
+    }
     return;
   }
   const node = document.createElement('div');
