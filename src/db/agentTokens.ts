@@ -46,7 +46,7 @@ export function findUserIdByAgentToken(db: DatabaseSync, secret: string): string
 export function listAgentTokens(db: DatabaseSync, userId: string): AgentToken[] {
   const rows = db
     .prepare('SELECT id, user_id, label, created_at, last_used_at FROM agent_tokens WHERE user_id = ? ORDER BY created_at DESC')
-    .all(userId) as AgentTokenRow[];
+    .all(userId) as unknown as AgentTokenRow[];
   return rows.map(toAgentToken);
 }
 
