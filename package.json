@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "directories": { "doc": "docs" },
+  "directories": {
+    "doc": "docs"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p .",
-    "test": "tsx --test src/auth/password.test.ts src/auth/agentAuth.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/agentTokens.test.ts src/agent/protocol.test.ts src/agent/hub.test.ts",
+    "test": "tsx --test src/auth/password.test.ts src/auth/agentAuth.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/agentTokens.test.ts src/agent/protocol.test.ts src/agent/hub.test.ts src/agent/wsServer.test.ts",
     "test:client": "tsx scripts/test-client.ts"
   },
   "keywords": [],
@@ -16,11 +18,13 @@
   "type": "module",
   "dependencies": {
     "express": "^5.2.1",
+    "ws": "^8.21.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^26.5.1",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
