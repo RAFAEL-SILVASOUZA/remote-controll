@@ -3,17 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>remote-controll — Sessões</title>
+  <title>remote-controll — Conversas</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1>Sessões conectadas</h1>
-    <button id="logout" class="secondary">Sair</button>
+    <h1>Conversas abertas</h1>
+    <div>
+      <a href="/tokens"><button class="secondary">Tokens</button></a>
+      <button id="logout" class="secondary">Sair</button>
+    </div>
   </header>
   <main class="page">
     <ul id="sessions" class="session-list"></ul>
-    <p id="empty" hidden>Nenhum agente conectado ainda.</p>
+    <p id="empty" hidden>Nenhuma conversa aberta no vide-code no momento.</p>
   </main>
   <script src="/sessions.js"></script>
 </body>

@@ -1,26 +1,22 @@
 const list = document.getElementById('sessions');
 const empty = document.getElementById('empty');
 
-function render(sessions) {
+function render(conversations) {
   list.innerHTML = '';
-  empty.hidden = sessions.length > 0;
-  for (const session of sessions) {
+  empty.hidden = conversations.length > 0;
+  for (const conversation of conversations) {
     const li = document.createElement('li');
     const a = document.createElement('a');
-    a.href = `/session/${session.id}`;
+    a.href = `/conversations/${conversation.id}`;
 
     const label = document.createElement('span');
     const name = document.createElement('strong');
-    name.textContent = session.clientName;
-    const workspace = document.createElement('span');
-    workspace.className = 'workspace';
-    workspace.textContent = session.workspace;
+    name.textContent = conversation.title || conversation.id;
     label.appendChild(name);
-    label.appendChild(workspace);
 
     const badge = document.createElement('span');
-    badge.className = `badge badge-${session.status}`;
-    badge.textContent = session.status;
+    badge.className = `badge badge-${conversation.status}`;
+    badge.textContent = conversation.status;
 
     a.appendChild(label);
     a.appendChild(badge);
@@ -29,10 +25,10 @@ function render(sessions) {
   }
 }
 
-fetch('/api/sessions').then((r) => r.json()).then(render);
+fetch('/api/conversations').then((r) => r.json()).then(render);
 
 const events = new EventSource('/events');
-events.addEventListener('sessions', (event) => {
+events.addEventListener('conversations', (event) => {
   render(JSON.parse(event.data));
 });
 
