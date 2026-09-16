@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p .",
-    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/auth/agentAuth.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/agentTokens.test.ts",
+    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/auth/agentAuth.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/agentTokens.test.ts src/agent/protocol.test.ts",
     "test:client": "tsx scripts/test-client.ts"
   },
   "keywords": [],
