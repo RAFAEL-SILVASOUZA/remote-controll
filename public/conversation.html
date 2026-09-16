@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>remote-controll — Conversa</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1><a href="/">&larr; Conversas</a></h1>
+    <button id="logout" class="secondary">Sair</button>
+  </header>
+  <main class="page">
+    <div id="messages"></div>
+    <div id="pending-question"></div>
+    <div id="compose">
+      <input id="message-input" type="text" placeholder="Mandar mensagem..." />
+      <button id="send-btn">Enviar</button>
+      <button id="stop-btn" class="secondary">Parar</button>
+    </div>
+  </main>
+  <script src="/conversation.js"></script>
+</body>
+</html>
