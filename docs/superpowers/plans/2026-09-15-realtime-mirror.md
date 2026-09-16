@@ -326,7 +326,7 @@ export function findUserIdByAgentToken(db: DatabaseSync, secret: string): string
 export function listAgentTokens(db: DatabaseSync, userId: string): AgentToken[] {
   const rows = db
     .prepare('SELECT id, user_id, label, created_at, last_used_at FROM agent_tokens WHERE user_id = ? ORDER BY created_at DESC')
-    .all(userId) as AgentTokenRow[];
+    .all(userId) as unknown as AgentTokenRow[];
   return rows.map(toAgentToken);
 }
 
@@ -779,7 +779,7 @@ test('closeConversation remove a conversa da listagem', () => {
   assert.equal(hub.getConversation('c1'), undefined);
 });
 
-test('applySnapshot acumula activity entre chamadas', () => {
+test('applySnapshot substitui activity pelo array recebido (o vide-code manda o acumulado inteiro, não um delta)', () => {
   const hub = new AgentHub();
   const connection = hub.registerConnection('user-1', () => {});
   hub.openConversation(connection.id, 'c1');
@@ -792,12 +792,32 @@ test('applySnapshot acumula activity entre chamadas', () => {
   hub.applySnapshot('c1', {
     id: 'c1',
     status: 'streaming',
-    activity: [{ id: 'a2', kind: 'tool_call', text: 'passo 2', createdAt: new Date().toISOString() }],
+    activity: [
+      { id: 'a1', kind: 'tool_call', text: 'passo 1', createdAt: new Date().toISOString() },
+      { id: 'a2', kind: 'tool_call', text: 'passo 2', createdAt: new Date().toISOString() },
+    ],
   });
 
   const conversation = hub.getConversation('c1')!;
   assert.equal(conversation.activity.length, 2);
+  assert.equal(conversation.activity[0].id, 'a1');
   assert.equal(conversation.activity[1].id, 'a2');
+});
+
+test('applySnapshot sem activity no payload preserva a activity já registrada', () => {
+  const hub = new AgentHub();
+  const connection = hub.registerConnection('user-1', () => {});
+  hub.openConversation(connection.id, 'c1');
+
+  hub.applySnapshot('c1', {
+    id: 'c1',
+    status: 'streaming',
+    activity: [{ id: 'a1', kind: 'tool_call', text: 'passo 1', createdAt: new Date().toISOString() }],
+  });
+  hub.applySnapshot('c1', { id: 'c1', status: 'completed', message: { role: 'assistant', content: 'ok' } });
+
+  const conversation = hub.getConversation('c1')!;
+  assert.equal(conversation.activity.length, 1);
 });
 
 test('applySnapshot registra o turno do agente em history ao terminar', () => {
@@ -995,8 +1015,10 @@ export class AgentHub extends EventEmitter {
     existing.title = snapshot.title ?? existing.title;
     existing.status = snapshot.status;
     existing.message = snapshot.message;
-    if (snapshot.activity && snapshot.activity.length > 0) {
-      existing.activity = [...existing.activity, ...snapshot.activity];
+    if (snapshot.activity) {
+      // O vide-code manda o array acumulado inteiro a cada snapshot, não um delta —
+      // substituir aqui em vez de concatenar evita duplicar entradas já vistas.
+      existing.activity = snapshot.activity;
     }
     existing.pendingQuestion = snapshot.pendingQuestion;
     existing.error = snapshot.error;
@@ -2132,6 +2154,11 @@ const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/agent/ws`;
 const ws = new WebSocket(wsUrl, { headers: { Authorization: `Bearer ${token}` } });
 const conversationId = `fake-${randomUUID()}`;
 
+// O vide-code de verdade acumula a activity da conversa inteira e reenvia o array
+// completo a cada snapshot (não um delta) — o fake replica esse comportamento
+// pra exercitar o AgentHub do jeito real.
+const activityLog: { id: string; kind: 'tool_call'; text: string; createdAt: string }[] = [];
+
 function send(message: unknown): void {
   ws.send(JSON.stringify(message));
 }
@@ -2144,13 +2171,14 @@ async function simulateTurn(userMessage: string): Promise<void> {
   send({ type: 'event', event: 'snapshot', payload: { id: conversationId, status: 'queued' } });
   await delay(300);
 
+  activityLog.push({ id: randomUUID(), kind: 'tool_call', text: 'Lendo arquivo fake.ts', createdAt: new Date().toISOString() });
   send({
     type: 'event',
     event: 'snapshot',
     payload: {
       id: conversationId,
       status: 'streaming',
-      activity: [{ id: randomUUID(), kind: 'tool_call', text: 'Lendo arquivo fake.ts', createdAt: new Date().toISOString() }],
+      activity: [...activityLog],
       message: { role: 'assistant', content: `Recebi: "${userMessage}"` },
     },
   });

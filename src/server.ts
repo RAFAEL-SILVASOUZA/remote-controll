@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { createDb, defaultDbPath } from './db/index.js';
 import { attachUser } from './auth/webAuth.js';
 import { createAuthRouter } from './web/authRoutes.js';
-import { SessionStore } from './sessions/store.js';
+import { AgentHub } from './agent/hub.js';
 import { createWebRouter } from './web/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const db = createDb(defaultDbPath());
-const store = new SessionStore();
+const hub = new AgentHub();
 const app = express();
 
 app.use((req, res, next) => {
@@ -22,11 +22,8 @@ app.use((req, res, next) => {
 
 app.use(attachUser(db));
 app.use(createAuthRouter(db));
-app.use(createWebRouter(store));
+app.use(createWebRouter(hub as any));
 app.use(express.static(path.join(__dirname, '..', 'public'), { index: false }));
-
-const STALE_SESSION_MS = 2 * 60 * 1000;
-setInterval(() => store.sweepStaleSessions(STALE_SESSION_MS), 30_000).unref();
 
 const port = Number(process.env.PORT) || 5002;
 app.listen(port, () => {

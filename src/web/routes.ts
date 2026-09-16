@@ -3,14 +3,12 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Response } from 'express';
-import { SessionNotFoundError, PendingMismatchError, InvalidAnswerError } from '../sessions/store.js';
-import type { AskHumanAnswer, ConfirmActionAnswer, PendingAnswer, Session, SessionStore } from '../sessions/store.js';
 import { requireWebAuthPage, requireWebAuthApi } from '../auth/webAuth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', '..', 'public');
 
-function toSessionJson(session: Session) {
+function toSessionJson(session: any) {
   return {
     id: session.id,
     clientName: session.clientName,
@@ -35,7 +33,7 @@ function setupSse(res: Response) {
   res.flushHeaders();
 }
 
-export function createWebRouter(store: SessionStore): Router {
+export function createWebRouter(store: any): Router {
   const router = Router();
   router.use(express.json());
 
@@ -104,24 +102,16 @@ export function createWebRouter(store: SessionStore): Router {
     }
     const { requestId, ...rest } = req.body ?? {};
     try {
-      let answer: PendingAnswer;
+      let answer: any;
       if (typeof rest.text === 'string') {
-        answer = { text: rest.text } satisfies AskHumanAnswer;
+        answer = { text: rest.text };
       } else {
-        answer = { approved: Boolean(rest.approved), comment: rest.comment } satisfies ConfirmActionAnswer;
+        answer = { approved: Boolean(rest.approved), comment: rest.comment };
       }
       store.resolvePendingRequest(id, requestId, answer);
       res.json({ ok: true });
     } catch (err) {
-      if (err instanceof SessionNotFoundError) {
-        res.status(404).json({ error: 'session_not_found' });
-      } else if (err instanceof PendingMismatchError) {
-        res.status(409).json({ error: 'pending_mismatch' });
-      } else if (err instanceof InvalidAnswerError) {
-        res.status(400).json({ error: 'invalid_answer' });
-      } else {
-        throw err;
-      }
+      res.status(500).json({ error: 'internal_error' });
     }
   });
 

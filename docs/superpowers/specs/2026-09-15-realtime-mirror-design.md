@@ -117,7 +117,7 @@ Envelope:
 - **`stop_response({ id })`** — botão "Parar".
 - **`answer_question({ id, messageId, answers, skipped })`** — resposta do card de `askUser`. `answers` no shape `UserAnswers` (`Record<questionId, string | string[]>`).
 - **`conversation_opened { id, title }`** / **`conversation_closed { id }`** — o hub cria/remove a `Conversation` e emite `conversations-changed`.
-- **`snapshot { ...Conversation }`** — o hub substitui o estado da conversa (`status`, `message`, `activity` append, `pendingQuestion`) e emite `conversation-updated`.
+- **`snapshot { ...Conversation }`** — o hub substitui o estado da conversa (`status`, `message`, `activity`, `pendingQuestion`) e emite `conversation-updated`. **`activity` chega como array cumulativo completo a cada snapshot** (o vide-code acumula e reenvia tudo, não um delta) — o hub substitui `existing.activity` pelo array recebido, nunca concatena. Confirmado contra a implementação real do lado vide-code (`webview/remote-chat.js`, `cloneSnapshot`/`publish`), que reenvia o snapshot inteiro a cada mudança.
 
 Todo payload recebido do WS é validado com `zod` antes de tocar o `AgentHub` — nunca confiar cegamente no que chega de uma conexão externa, mesmo autenticada.
 
