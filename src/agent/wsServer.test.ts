@@ -4,6 +4,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocket } from 'ws';
 import { createDb } from '../db/index.js';
+import { createUser } from '../db/users.js';
 import { issueAgentToken } from '../db/agentTokens.js';
 import { AgentHub } from './hub.js';
 import { attachAgentWsServer, AGENT_WS_PATH } from './wsServer.js';
@@ -57,7 +58,8 @@ test('conexão sem token é recusada com 401', async () => {
 
 test('conexão autenticada registra a conversa aberta no hub', async () => {
   const { db, hub, port, close } = await startServer();
-  const { secret } = issueAgentToken(db, 'user-1', 'teste');
+  const user = createUser(db, 'test-user-1@example.com', 'hash');
+  const { secret } = issueAgentToken(db, user.id, 'teste');
   const ws = new WebSocket(`ws://localhost:${port}${AGENT_WS_PATH}`, {
     headers: { Authorization: `Bearer ${secret}` },
   });
@@ -69,8 +71,8 @@ test('conexão autenticada registra a conversa aberta no hub', async () => {
 
   ws.send(JSON.stringify({ type: 'event', event: 'conversation_opened', payload: { id: 'c1', title: 'Teste' } }));
 
-  await waitUntil(() => hub.listConversations('user-1').length === 1);
-  assert.equal(hub.listConversations('user-1')[0].id, 'c1');
+  await waitUntil(() => hub.listConversations(user.id).length === 1);
+  assert.equal(hub.listConversations(user.id)[0].id, 'c1');
 
   ws.close();
   await close();
@@ -78,7 +80,8 @@ test('conexão autenticada registra a conversa aberta no hub', async () => {
 
 test('hub.sendCommand entrega o comando pro socket certo', async () => {
   const { db, hub, port, close } = await startServer();
-  const { secret } = issueAgentToken(db, 'user-1', 'teste');
+  const user = createUser(db, 'test-user-2@example.com', 'hash');
+  const { secret } = issueAgentToken(db, user.id, 'teste');
   const ws = new WebSocket(`ws://localhost:${port}${AGENT_WS_PATH}`, {
     headers: { Authorization: `Bearer ${secret}` },
   });
@@ -88,7 +91,7 @@ test('hub.sendCommand entrega o comando pro socket certo', async () => {
     ws.on('error', reject);
   });
   ws.send(JSON.stringify({ type: 'event', event: 'conversation_opened', payload: { id: 'c1' } }));
-  await waitUntil(() => hub.listConversations('user-1').length === 1);
+  await waitUntil(() => hub.listConversations(user.id).length === 1);
 
   const received = new Promise<{ type: string; operation: string }>((resolve) => {
     ws.on('message', (raw) => resolve(JSON.parse(raw.toString())));

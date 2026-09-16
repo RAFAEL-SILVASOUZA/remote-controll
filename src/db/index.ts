@@ -6,7 +6,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function createDb(dbPath: string): DatabaseSync {
   const db = new DatabaseSync(dbPath);
-  db.exec('PRAGMA foreign_keys = OFF;');
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
