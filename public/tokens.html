@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>remote-controll — Tokens</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1><a href="/">&larr; Conversas</a></h1>
+    <button id="logout" class="secondary">Sair</button>
+  </header>
+  <main class="page">
+    <p>Cole o token gerado aqui na configuração do vide-code para conectar.</p>
+    <div id="new-token"></div>
+    <form id="create-form">
+      <input id="label-input" type="text" placeholder="Nome (ex: notebook)" />
+      <button type="submit">Gerar token</button>
+    </form>
+    <ul id="token-list" class="session-list"></ul>
+  </main>
+  <script src="/tokens.js"></script>
+</body>
+</html>
