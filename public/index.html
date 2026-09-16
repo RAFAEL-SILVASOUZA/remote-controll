@@ -3,18 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>remote-controll — Conversas</title>
+  <title>remote-controll - Conversas</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header class="topbar">
     <h1>Conversas abertas</h1>
     <div>
-      <a href="/tokens"><button class="secondary">Tokens</button></a>
-      <button id="logout" class="secondary">Sair</button>
+      <button id="new-chat" class="icon-btn" title="Nova conversa" aria-label="Nova conversa">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.36 7.56L3 21l2.02-5.4A8.5 8.5 0 1 1 21 11.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8v5M9.5 10.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <a href="/tokens" class="icon-btn" title="Tokens" aria-label="Tokens">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="7" cy="15" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 12.5 19 3m0 0h-4m4 0v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <button id="logout" class="icon-btn" title="Sair" aria-label="Sair">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
   </header>
   <main class="page">
+    <p id="new-chat-status" class="hint" hidden></p>
     <ul id="sessions" class="session-list"></ul>
     <p id="empty" hidden>Nenhuma conversa aberta no vide-code no momento.</p>
   </main>

@@ -160,4 +160,14 @@ export class AgentHub extends EventEmitter {
     const command = { type: 'command' as const, requestId: randomUUID(), ...input };
     connection.send(JSON.stringify(command));
   }
+
+  // Ao contrário de sendCommand, não há conversa existente para resolver a conexão:
+  // pega a conexão ativa do próprio usuário. O vide-code cria a aba e confirma via
+  // o evento 'conversation_opened' de sempre; não há resposta síncrona aqui.
+  requestNewConversation(userId: string): void {
+    const connection = [...this.connections.values()].find((c) => c.userId === userId);
+    if (!connection) throw new ConnectionUnavailableError(userId);
+    const command = { type: 'command' as const, requestId: randomUUID(), operation: 'open_conversation' as const, payload: {} };
+    connection.send(JSON.stringify(command));
+  }
 }

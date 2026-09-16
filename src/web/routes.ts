@@ -61,6 +61,15 @@ export function createWebRouter(hub: AgentHub): Router {
     res.json(hub.listConversations(req.userId!).map(toConversationJson));
   });
 
+  router.post('/api/conversations/new', requireWebAuthApi, (req, res) => {
+    try {
+      hub.requestNewConversation(req.userId!);
+      res.status(202).json({ ok: true });
+    } catch (err) {
+      handleCommandError(err, res);
+    }
+  });
+
   router.get('/events', requireWebAuthApi, (req, res) => {
     setupSse(res);
     const userId = req.userId!;

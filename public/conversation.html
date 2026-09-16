@@ -3,23 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>remote-controll — Conversa</title>
+  <title>remote-controll - Conversa</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
+<body class="conversation-page">
   <header class="topbar">
     <h1><a href="/">&larr; Conversas</a></h1>
-    <button id="logout" class="secondary">Sair</button>
+    <button id="logout" class="icon-btn" title="Sair" aria-label="Sair">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </header>
-  <main class="page">
-    <div id="messages"></div>
+  <div id="messages" class="messages"></div>
+  <footer id="footer">
     <div id="pending-question"></div>
     <div id="compose">
-      <input id="message-input" type="text" placeholder="Mandar mensagem..." />
-      <button id="send-btn">Enviar</button>
-      <button id="stop-btn" class="secondary">Parar</button>
+      <input id="message-input" type="text" placeholder="Mandar mensagem..." autocomplete="off" />
+      <button id="send-btn" type="button" aria-label="Enviar mensagem">
+        <svg id="send-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3.4 20.6 21 12 3.4 3.4 3 10l13 2-13 2z" fill="currentColor"/></svg>
+        <svg id="stop-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" hidden><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/></svg>
+      </button>
     </div>
-  </main>
-  <script src="/conversation.js"></script>
+  </footer>
+  <script type="module" src="/conversation.js"></script>
 </body>
 </html>

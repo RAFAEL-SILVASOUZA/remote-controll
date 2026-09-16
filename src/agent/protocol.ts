@@ -15,11 +15,20 @@ export const userQuestionSchema = z.object({
   allowOther: z.boolean().optional(),
 });
 
+export const activitySubagentSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+});
+
 export const activityEntrySchema = z.object({
   id: z.string(),
   kind: z.enum(['tool_call', 'tool_result', 'diff', 'info']),
   text: z.string(),
   createdAt: z.string(),
+  // Opcional: identifica que essa atividade veio de um subagente, não da conversa
+  // principal. Quando ausente, a UI trata a entrada como atividade da conversa
+  // principal (comportamento anterior, sem regressão).
+  subagent: activitySubagentSchema.optional(),
 });
 
 export const pendingQuestionSchema = z.object({
@@ -114,8 +123,16 @@ export const answerQuestionCommandSchema = z.object({
   }),
 });
 
+export const openConversationCommandSchema = z.object({
+  type: z.literal('command'),
+  requestId: z.string(),
+  operation: z.literal('open_conversation'),
+  payload: z.object({}),
+});
+
 export type QuestionOption = z.infer<typeof questionOptionSchema>;
 export type UserQuestion = z.infer<typeof userQuestionSchema>;
+export type ActivitySubagent = z.infer<typeof activitySubagentSchema>;
 export type ActivityEntry = z.infer<typeof activityEntrySchema>;
 export type PendingQuestion = z.infer<typeof pendingQuestionSchema>;
 export type ConversationStatus = z.infer<typeof conversationStatusSchema>;
