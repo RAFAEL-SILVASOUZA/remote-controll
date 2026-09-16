@@ -49,10 +49,13 @@ body {
 .badge-disconnected { background: #fee2e2; color: #991b1b; }
 
 #messages { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
-.message { padding: 0.65rem 0.9rem; border-radius: var(--radius); background: var(--color-surface); border: 1px solid var(--color-border); max-width: 80%; }
+.message { padding: 0.65rem 0.9rem; border-radius: var(--radius); background: var(--color-surface); border: 1px solid var(--color-border); max-width: 80%; white-space: pre-wrap; overflow-wrap: anywhere; }
 .message-agent { align-self: flex-start; }
 .message-human { align-self: flex-end; background: #eef2ff; border-color: #c7d2fe; }
 .message-system { align-self: center; font-style: italic; color: var(--color-muted); background: transparent; border: none; }
+.message-prefix { font-weight: 600; }
+.mermaid-diagram { max-width: 100%; overflow-x: auto; margin-top: 0.5rem; }
+.mermaid-diagram svg { max-width: 100%; height: auto; }
 
 #reply-area { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 #reply-area input[type="text"] { flex: 1; padding: 0.55rem 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.95rem; }
@@ -71,3 +74,10 @@ button.secondary { background: var(--color-surface); color: var(--color-text); b
 .auth-switch { font-size: 0.85rem; text-align: center; color: var(--color-muted); margin: 0; }
 
 .error { color: var(--color-danger); font-size: 0.85rem; margin: 0; }
+
+@media (max-width: 480px) {
+  .topbar { padding: 0.85rem 1rem; }
+  .page { padding: 1rem; }
+  .message { max-width: 100%; }
+  .auth-card { width: 100%; max-width: 320px; }
+}

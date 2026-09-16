@@ -15,10 +15,10 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
 
   server.tool(
     'ask_human',
-    'Envia uma pergunta para o humano responsável, que recebe e responde pelo painel de controle remoto. Use quando precisar de uma informação, decisão ou preferência que só o humano sabe. Por padrão o humano responde em texto livre; informe "options" para transformar em múltipla escolha.',
+    'Envia uma pergunta para o humano responsável, que recebe e responde pelo painel de controle remoto. Use quando precisar de uma informação, decisão ou preferência que só o humano sabe. Por padrão o humano responde em texto livre; informe "options" para transformar em múltipla escolha. Para mostrar um diagrama (fluxo, arquitetura, sequência etc.) em vez de só texto, inclua um bloco cercado por ```mermaid\\n...\\n``` dentro de "question" ou "context" com a sintaxe do Mermaid — o painel renderiza esse trecho como diagrama automaticamente; o restante do texto fora do bloco continua sendo exibido normalmente.',
     {
-      question: z.string().describe('A pergunta exibida ao humano. Seja claro e direto — é a única coisa que ele vê de imediato.'),
-      context: z.string().optional().describe('Informações extras para o humano entender a pergunta (ex.: o que está sendo feito, por quê). Opcional.'),
+      question: z.string().describe('A pergunta exibida ao humano. Seja claro e direto — é a única coisa que ele vê de imediato. Pode conter um bloco ```mermaid ... ``` para exibir um diagrama.'),
+      context: z.string().optional().describe('Informações extras para o humano entender a pergunta (ex.: o que está sendo feito, por quê). Opcional. Pode conter um bloco ```mermaid ... ``` para exibir um diagrama.'),
       options: z.array(z.string()).optional().describe('Lista de alternativas para o humano escolher, em vez de digitar uma resposta livre. Opcional — omita para pergunta de texto livre.'),
       multiple: z.boolean().optional().describe('Se true, o humano pode selecionar mais de uma opção em "options". Só tem efeito quando "options" é informado. Padrão: false (escolha única).'),
     },
@@ -32,10 +32,10 @@ function buildMcpServer(store: SessionStore): { server: McpServer; setSessionId:
 
   server.tool(
     'confirm_action',
-    'Pede ao humano para aprovar ou rejeitar uma ação antes de executá-la. Use antes de qualquer ação sensível, destrutiva ou irreversível (ex.: apagar dados, enviar algo publicamente, gastar dinheiro) para obter permissão explícita.',
+    'Pede ao humano para aprovar ou rejeitar uma ação antes de executá-la. Use antes de qualquer ação sensível, destrutiva ou irreversível (ex.: apagar dados, enviar algo publicamente, gastar dinheiro) para obter permissão explícita. Para ilustrar o impacto com um diagrama (ex.: o que muda em um fluxo ou arquitetura), inclua um bloco cercado por ```mermaid\\n...\\n``` dentro de "description" ou "details" com a sintaxe do Mermaid — o painel renderiza esse trecho como diagrama automaticamente; o restante do texto fora do bloco continua sendo exibido normalmente.',
     {
-      description: z.string().describe('Descrição curta e clara da ação que precisa de aprovação (ex.: "Apagar a tabela de usuários de teste").'),
-      details: z.string().optional().describe('Detalhes adicionais para o humano avaliar a ação (ex.: escopo, impacto, alternativas consideradas). Opcional.'),
+      description: z.string().describe('Descrição curta e clara da ação que precisa de aprovação (ex.: "Apagar a tabela de usuários de teste"). Pode conter um bloco ```mermaid ... ``` para exibir um diagrama.'),
+      details: z.string().optional().describe('Detalhes adicionais para o humano avaliar a ação (ex.: escopo, impacto, alternativas consideradas). Opcional. Pode conter um bloco ```mermaid ... ``` para exibir um diagrama.'),
     },
     async ({ description, details }) => {
       if (!sessionId) throw new Error('Sessão MCP ainda não inicializada.');

@@ -2,11 +2,56 @@ const sessionId = window.location.pathname.split('/').pop();
 const messagesEl = document.getElementById('messages');
 const replyArea = document.getElementById('reply-area');
 
-function renderMessage(message) {
+if (window.mermaid) {
+  window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+}
+
+let mermaidDiagramCount = 0;
+const MERMAID_BLOCK = /```mermaid\n([\s\S]*?)```/g;
+
+async function renderMessage(message) {
   const div = document.createElement('div');
   div.className = `message message-${message.role}`;
-  div.textContent = `[${message.role}] ${message.text}`;
+
+  const prefix = document.createElement('span');
+  prefix.className = 'message-prefix';
+  prefix.textContent = `[${message.role}] `;
+  div.appendChild(prefix);
+
+  const text = message.text;
+  let lastIndex = 0;
+  let match;
+  MERMAID_BLOCK.lastIndex = 0;
+  const diagrams = [];
+  while ((match = MERMAID_BLOCK.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      div.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+    const placeholder = document.createElement('div');
+    placeholder.className = 'mermaid-diagram';
+    div.appendChild(placeholder);
+    diagrams.push({ placeholder, source: match[1] });
+    lastIndex = MERMAID_BLOCK.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    div.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
   messagesEl.appendChild(div);
+
+  for (const { placeholder, source } of diagrams) {
+    if (!window.mermaid) {
+      placeholder.textContent = source;
+      continue;
+    }
+    try {
+      const id = `mermaid-diagram-${mermaidDiagramCount++}`;
+      const { svg } = await window.mermaid.render(id, source);
+      placeholder.innerHTML = svg;
+    } catch (err) {
+      placeholder.textContent = source;
+    }
+  }
 }
 
 function renderReplyArea(session) {
