@@ -85,6 +85,7 @@ test('applySnapshot registra o turno do agente em history ao terminar', () => {
   assert.equal(conversation.history.length, 1);
   assert.equal(conversation.history[0].role, 'agent');
   assert.equal(conversation.history[0].text, 'final');
+  assert.equal(conversation.message, undefined);
 });
 
 test('applySnapshot lança ConversationNotFoundError para conversa desconhecida', () => {

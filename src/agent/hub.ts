@@ -128,6 +128,7 @@ export class AgentHub extends EventEmitter {
         ...existing.history,
         { id: randomUUID(), role: 'agent', text: existing.message.content, createdAt: existing.lastSeenAt },
       ];
+      existing.message = undefined;
     }
 
     this.emit('conversation-updated', existing);
