@@ -14,7 +14,7 @@ export function createTokenRouter(db: DatabaseSync): Router {
   router.use(express.json());
 
   router.get('/tokens', requireWebAuthPage, (_req, res) => {
-    res.sendFile(path.join(publicDir, 'tokens.html'));
+    res.sendFile('tokens.html', { root: publicDir });
   });
 
   router.get('/api/tokens', requireWebAuthApi, (req, res) => {

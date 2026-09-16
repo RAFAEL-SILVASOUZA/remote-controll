@@ -28,11 +28,11 @@ export function createAuthRouter(db: DatabaseSync): Router {
   router.use(express.json());
 
   router.get('/login', (_req, res) => {
-    res.sendFile(path.join(publicDir, 'login.html'));
+    res.sendFile('login.html', { root: publicDir });
   });
 
   router.get('/signup', (_req, res) => {
-    res.sendFile(path.join(publicDir, 'signup.html'));
+    res.sendFile('signup.html', { root: publicDir });
   });
 
   router.post('/api/auth/signup', (req, res) => {

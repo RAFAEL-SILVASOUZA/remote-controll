@@ -45,7 +45,7 @@ export function createWebRouter(hub: AgentHub): Router {
   router.use(express.json());
 
   router.get('/', requireWebAuthPage, (_req, res) => {
-    res.sendFile(path.join(publicDir, 'index.html'));
+    res.sendFile('index.html', { root: publicDir });
   });
 
   router.get('/conversations/:id', requireWebAuthPage, (req, res) => {
@@ -54,7 +54,7 @@ export function createWebRouter(hub: AgentHub): Router {
       res.status(404).send('Conversa não encontrada.');
       return;
     }
-    res.sendFile(path.join(publicDir, 'conversation.html'));
+    res.sendFile('conversation.html', { root: publicDir });
   });
 
   router.get('/api/conversations', requireWebAuthApi, (req, res) => {
