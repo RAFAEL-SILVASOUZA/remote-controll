@@ -2,17 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>remote-controll - Conversas</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1>Conversas abertas</h1>
+    <h1><span class="brand-mark" aria-hidden="true">r</span>remote</h1>
     <div>
-      <button id="new-chat" class="icon-btn" title="Nova conversa" aria-label="Nova conversa">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.36 7.56L3 21l2.02-5.4A8.5 8.5 0 1 1 21 11.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8v5M9.5 10.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
       <a href="/tokens" class="icon-btn" title="Tokens" aria-label="Tokens">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="7" cy="15" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 12.5 19 3m0 0h-4m4 0v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
@@ -22,12 +19,16 @@
     </div>
   </header>
   <main class="page">
-    <p id="new-chat-status" class="hint" hidden></p>
-    <select id="new-chat-picker" class="window-picker" hidden>
+    <div class="page-heading">
+      <div><p class="eyebrow">Seu workspace, de qualquer lugar</p><h2>Conversas</h2><p>Acompanhe o trabalho e continue de onde parou.</p></div>
+      <button id="new-chat" class="primary-action"><span aria-hidden="true">+</span> Nova conversa</button>
+    </div>
+    <p id="new-chat-status" class="hint" role="status" hidden></p>
+    <select id="new-chat-picker" class="window-picker" aria-label="Janela do VS Code para a nova conversa" hidden>
       <option value="" selected disabled>Em qual janela do VS Code?</option>
     </select>
     <ul id="sessions" class="session-list"></ul>
-    <p id="empty" hidden>Nenhuma conversa aberta no vide-code no momento.</p>
+    <p id="empty" class="empty-state" hidden>Nenhuma conversa por aqui ainda.<br>Conecte o vide-code e abra uma nova conversa.</p>
   </main>
   <script src="/sessions.js"></script>
 </body>

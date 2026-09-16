@@ -15,7 +15,13 @@ function render(tokens) {
     row.className = 'token-row';
 
     const label = document.createElement('span');
-    label.textContent = `${token.label} · criado em ${new Date(token.createdAt).toLocaleString('pt-BR')}`;
+    const name = document.createElement('strong');
+    name.className = 'token-name';
+    name.textContent = token.label;
+    const date = document.createElement('span');
+    date.className = 'token-date';
+    date.textContent = `Criado em ${new Date(token.createdAt).toLocaleString('pt-BR')}`;
+    label.append(name, date);
 
     const revoke = document.createElement('button');
     revoke.className = 'icon-btn danger';

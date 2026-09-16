@@ -7,6 +7,11 @@ const newChatPicker = document.getElementById('new-chat-picker');
 let knownIds = new Set();
 let awaitingNew = false;
 let awaitingTimer = null;
+const statusLabels = {
+  idle: 'Disponível', queued: 'Na fila', streaming: 'Em andamento',
+  waiting_user: 'Aguarda resposta', completed: 'Concluída', cancelled: 'Interrompida',
+  error: 'Erro', disconnected: 'Desconectada',
+};
 
 function render(conversations) {
   list.innerHTML = '';
@@ -29,11 +34,12 @@ function render(conversations) {
     const label = document.createElement('span');
     const name = document.createElement('strong');
     name.textContent = conversation.title || conversation.id;
+    name.title = name.textContent;
     label.appendChild(name);
 
     const badge = document.createElement('span');
     badge.className = `badge badge-${conversation.status}`;
-    badge.textContent = conversation.status;
+    badge.textContent = statusLabels[conversation.status] || conversation.status;
 
     a.appendChild(label);
     a.appendChild(badge);

@@ -2,17 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>remote-controll - Entrar</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body class="auth-page">
   <form id="login-form" class="auth-card">
-    <h1>Entrar</h1>
-    <label>E-mail<input type="email" id="email" required /></label>
-    <label>Senha<input type="password" id="password" required /></label>
+    <div><p class="eyebrow">remote</p><h1>Bem-vindo de volta</h1><p class="hint">Seu workspace está a um toque de distância.</p></div>
+    <label>E-mail<input type="email" id="email" autocomplete="username" autocapitalize="none" required /></label>
+    <label>Senha<input type="password" id="password" autocomplete="current-password" required /></label>
     <button type="submit">Entrar</button>
-    <p id="error" class="error" hidden></p>
+    <p id="error" class="error" role="alert" hidden></p>
     <p class="auth-switch">Não tem conta? <a href="/signup">Cadastre-se</a></p>
   </form>
   <script src="/login.js"></script>

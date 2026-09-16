@@ -10,7 +10,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p .",
     "test": "tsx --test src/auth/password.test.ts src/auth/agentAuth.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/agentTokens.test.ts src/agent/protocol.test.ts src/agent/hub.test.ts src/agent/wsServer.test.ts",
-    "test:client": "tsx scripts/test-client.ts"
+    "test:client": "tsx scripts/test-client.ts",
+    "test:ui": "node scripts/test-mobile-ui.mjs",
+    "preview:ui": "node scripts/mobile-fixture.mjs --serve"
   },
   "keywords": [],
   "author": "",

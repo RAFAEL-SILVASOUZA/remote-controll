@@ -2,18 +2,18 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>remote-controll - Cadastro</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body class="auth-page">
   <form id="signup-form" class="auth-card">
-    <h1>Criar conta</h1>
-    <label>E-mail<input type="email" id="email" required /></label>
-    <label>Senha<input type="password" id="password" minlength="8" required /></label>
-    <label>Confirmar senha<input type="password" id="confirmPassword" minlength="8" required /></label>
+    <div><p class="eyebrow">remote</p><h1>Crie sua conta</h1><p class="hint">Acompanhe seu agente de onde estiver.</p></div>
+    <label>E-mail<input type="email" id="email" autocomplete="username" autocapitalize="none" required /></label>
+    <label>Senha<input type="password" id="password" autocomplete="new-password" minlength="8" required /><span class="hint">Use pelo menos 8 caracteres.</span></label>
+    <label>Confirmar senha<input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" required /></label>
     <button type="submit">Cadastrar</button>
-    <p id="error" class="error" hidden></p>
+    <p id="error" class="error" role="alert" hidden></p>
     <p class="auth-switch">Já tem conta? <a href="/login">Entrar</a></p>
   </form>
   <script src="/signup.js"></script>

@@ -23,6 +23,17 @@ const subagentGroups = new Map(); // subagent.id -> group container element
 let taskListEl = null;
 let streaming = null; // { node, contentEl, parser, written, key }
 let firstRender = true;
+let pendingQuestionKey = null;
+
+// visualViewport follows the visible area when a mobile keyboard opens.
+function syncViewport() {
+  const height = window.visualViewport?.height || window.innerHeight;
+  document.body.style.setProperty('--app-height', `${height}px`);
+  document.body.classList.toggle('compact-viewport', height < 450);
+}
+syncViewport();
+window.visualViewport?.addEventListener('resize', syncViewport);
+window.addEventListener('resize', syncViewport);
 
 function isNearBottom() {
   return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < NEAR_BOTTOM_PX;
@@ -174,15 +185,17 @@ function ensureStreamingNode() {
   wrapper.appendChild(body);
   messagesEl.appendChild(wrapper);
   const parser = smd.parser(smd.default_renderer(body));
-  streaming = { node: wrapper, parser, written: 0 };
+  streaming = { node: wrapper, parser, content: '' };
   return streaming;
 }
 
 function updateStreamingMessage(content) {
+  // Snapshots may replace a placeholder or revise earlier text, not just append.
+  if (streaming && !content.startsWith(streaming.content)) clearStreamingMessage();
   const state = ensureStreamingNode();
-  if (content.length > state.written) {
-    smd.parser_write(state.parser, content.slice(state.written));
-    state.written = content.length;
+  if (content.length > state.content.length) {
+    smd.parser_write(state.parser, content.slice(state.content.length));
+    state.content = content;
   }
 }
 
@@ -233,19 +246,29 @@ function renderCompose(conversation) {
 }
 
 function renderPendingQuestion(conversation) {
-  pendingEl.innerHTML = '';
-  const pending = conversation.pendingQuestion;
-  if (!pending || conversation.status === 'disconnected') return;
+  const pending = conversation.status === 'disconnected' ? null : conversation.pendingQuestion;
+  const key = pending ? JSON.stringify(pending) : null;
+  if (key === pendingQuestionKey) return;
+  pendingQuestionKey = key;
+  pendingEl.replaceChildren();
+  if (!pending) return;
 
   const card = document.createElement('div');
   card.className = 'ask-user-card';
+  const heading = document.createElement('h2');
+  heading.className = 'ask-user-heading';
+  heading.textContent = 'Sua resposta é necessária';
+  card.appendChild(heading);
+  const body = document.createElement('div');
+  body.className = 'ask-user-body';
+  card.appendChild(body);
 
   for (const question of pending.questions) {
-    const block = document.createElement('div');
+    const block = document.createElement('fieldset');
     block.className = 'ask-user-question';
     block.dataset.questionId = question.id;
 
-    const title = document.createElement('div');
+    const title = document.createElement('legend');
     title.textContent = question.question;
     block.appendChild(title);
 
@@ -275,8 +298,9 @@ function renderPendingQuestion(conversation) {
       const otherText = document.createElement('input');
       otherText.type = 'text';
       otherText.placeholder = 'Outro...';
+      otherText.setAttribute('aria-label', `Outra resposta: ${question.question}`);
       otherText.disabled = true;
-      input.addEventListener('change', () => {
+      list.addEventListener('change', () => {
         otherText.disabled = !input.checked;
       });
       label.appendChild(input);
@@ -284,7 +308,7 @@ function renderPendingQuestion(conversation) {
       list.appendChild(label);
     }
     block.appendChild(list);
-    card.appendChild(block);
+    body.appendChild(block);
   }
 
   const submitBtn = document.createElement('button');
@@ -296,8 +320,15 @@ function renderPendingQuestion(conversation) {
   skipBtn.className = 'secondary';
   skipBtn.onclick = () => submitAnswer(pending.questions, card, true);
 
-  card.appendChild(submitBtn);
-  card.appendChild(skipBtn);
+  const error = document.createElement('p');
+  error.className = 'error';
+  error.setAttribute('role', 'alert');
+  error.hidden = true;
+  body.prepend(error);
+  const actions = document.createElement('div');
+  actions.className = 'ask-user-actions';
+  actions.append(submitBtn, skipBtn);
+  card.appendChild(actions);
   pendingEl.appendChild(card);
 }
 
@@ -306,7 +337,7 @@ async function submitAnswer(questions, card, skipped) {
   if (!skipped) {
     answers = {};
     for (const question of questions) {
-      const block = card.querySelector(`[data-question-id="${question.id}"]`);
+      const block = [...card.querySelectorAll('.ask-user-question')].find(el => el.dataset.questionId === question.id);
       const checkedValues = [...block.querySelectorAll('input:checked')].map((el) => el.value);
       const values = checkedValues.map((value) => {
         if (value !== OTHER_VALUE) return value;
@@ -316,11 +347,26 @@ async function submitAnswer(questions, card, skipped) {
       answers[question.id] = question.type === 'checkbox' ? values : values[0] ?? '';
     }
   }
-  await fetch(`/api/conversations/${conversationId}/answer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ skipped, answers }),
-  });
+  const buttons = [...card.querySelectorAll('button')];
+  const error = card.querySelector('.error');
+  error.hidden = true;
+  buttons.forEach(button => { button.disabled = true; });
+  try {
+    const response = await fetch(`/api/conversations/${conversationId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skipped, answers }),
+    });
+    if (!response.ok) throw new Error('answer_failed');
+  } catch {
+    error.textContent = 'Não foi possível enviar. Sua resposta foi mantida; tente novamente.';
+    error.hidden = false;
+    card.querySelector('.ask-user-body').scrollTop = 0;
+  } finally {
+    // HTTP 202 confirms forwarding, not that the agent consumed the answer.
+    // Keep the pending question usable until a later snapshot removes it.
+    buttons.forEach(button => { button.disabled = false; });
+  }
 }
 
 let currentStatus = 'idle';
