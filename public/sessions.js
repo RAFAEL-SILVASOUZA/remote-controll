@@ -2,6 +2,7 @@ const list = document.getElementById('sessions');
 const empty = document.getElementById('empty');
 const newChatBtn = document.getElementById('new-chat');
 const newChatStatus = document.getElementById('new-chat-status');
+const newChatPicker = document.getElementById('new-chat-picker');
 
 let knownIds = new Set();
 let awaitingNew = false;
@@ -53,16 +54,52 @@ document.getElementById('logout').addEventListener('click', async () => {
   window.location.href = '/login';
 });
 
-newChatBtn.addEventListener('click', async () => {
+function formatConnectionLabel(connection) {
+  return connection.label || `Janela conectada às ${new Date(connection.connectedAt).toLocaleTimeString('pt-BR')}`;
+}
+
+function showPicker(connections) {
+  newChatPicker.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.selected = true;
+  placeholder.disabled = true;
+  placeholder.textContent = 'Em qual janela do VS Code?';
+  newChatPicker.appendChild(placeholder);
+  for (const connection of connections) {
+    const option = document.createElement('option');
+    option.value = connection.id;
+    option.textContent = formatConnectionLabel(connection);
+    newChatPicker.appendChild(option);
+  }
+  newChatPicker.hidden = false;
+  newChatStatus.hidden = true;
+}
+
+async function requestNewConversation(connectionId) {
   newChatBtn.disabled = true;
+  newChatPicker.hidden = true;
   newChatStatus.textContent = 'Abrindo nova aba no vide-code...';
   newChatStatus.hidden = false;
   try {
-    const res = await fetch('/api/conversations/new', { method: 'POST' });
+    const res = await fetch('/api/conversations/new', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(connectionId ? { connectionId } : {}),
+    });
+    if (res.status === 409) {
+      const body = await res.json().catch(() => null);
+      if (body?.error === 'ambiguous_connection' && Array.isArray(body.connections)) {
+        showPicker(body.connections);
+        newChatBtn.disabled = false;
+        return;
+      }
+      newChatStatus.textContent = 'O vide-code não está conectado agora.';
+      newChatBtn.disabled = false;
+      return;
+    }
     if (!res.ok) {
-      newChatStatus.textContent = res.status === 409
-        ? 'O vide-code não está conectado agora.'
-        : 'Não foi possível abrir a conversa.';
+      newChatStatus.textContent = 'Não foi possível abrir a conversa.';
       newChatBtn.disabled = false;
       return;
     }
@@ -77,4 +114,10 @@ newChatBtn.addEventListener('click', async () => {
     newChatStatus.textContent = 'Não foi possível abrir a conversa.';
     newChatBtn.disabled = false;
   }
+}
+
+newChatBtn.addEventListener('click', () => requestNewConversation());
+newChatPicker.addEventListener('change', () => {
+  const connectionId = newChatPicker.value;
+  if (connectionId) requestNewConversation(connectionId);
 });

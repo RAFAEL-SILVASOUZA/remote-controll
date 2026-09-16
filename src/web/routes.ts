@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Response } from 'express';
-import { AgentHub, ConversationNotFoundError, ConnectionUnavailableError } from '../agent/hub.js';
+import { AgentHub, ConversationNotFoundError, ConnectionUnavailableError, AmbiguousConnectionError } from '../agent/hub.js';
 import type { Conversation } from '../agent/hub.js';
 import { requireWebAuthPage, requireWebAuthApi } from '../auth/webAuth.js';
 
@@ -61,11 +61,20 @@ export function createWebRouter(hub: AgentHub): Router {
     res.json(hub.listConversations(req.userId!).map(toConversationJson));
   });
 
+  router.get('/api/connections', requireWebAuthApi, (req, res) => {
+    res.json(hub.listConnections(req.userId!));
+  });
+
   router.post('/api/conversations/new', requireWebAuthApi, (req, res) => {
+    const connectionId = typeof req.body?.connectionId === 'string' ? req.body.connectionId : undefined;
     try {
-      hub.requestNewConversation(req.userId!);
+      hub.requestNewConversation(req.userId!, connectionId);
       res.status(202).json({ ok: true });
     } catch (err) {
+      if (err instanceof AmbiguousConnectionError) {
+        res.status(409).json({ error: 'ambiguous_connection', connections: err.connections });
+        return;
+      }
       handleCommandError(err, res);
     }
   });

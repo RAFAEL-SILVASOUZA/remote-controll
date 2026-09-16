@@ -63,6 +63,14 @@ const conversationOpenedEventSchema = z.object({
   payload: z.object({ id: z.string(), title: z.string().optional() }),
 });
 
+// Enviado pela extensão logo após conectar, pra identificar a janela/workspace
+// quando o usuário tem mais de uma janela conectada ao mesmo tempo.
+const connectionInfoEventSchema = z.object({
+  type: z.literal('event'),
+  event: z.literal('connection_info'),
+  payload: z.object({ label: z.string().optional() }),
+});
+
 const conversationClosedEventSchema = z.object({
   type: z.literal('event'),
   event: z.literal('conversation_closed'),
@@ -91,6 +99,7 @@ const resultErrSchema = z.object({
 
 export const wsInboundMessageSchema = z.union([
   conversationOpenedEventSchema,
+  connectionInfoEventSchema,
   conversationClosedEventSchema,
   snapshotEventSchema,
   resultOkSchema,

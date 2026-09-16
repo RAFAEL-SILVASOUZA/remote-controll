@@ -30,6 +30,13 @@ export interface AgentConnection {
   connectedAt: string;
   conversationIds: Set<string>;
   send: (data: string) => void;
+  label?: string;
+}
+
+export interface ConnectionSummary {
+  id: string;
+  label?: string;
+  connectedAt: string;
 }
 
 export class ConversationNotFoundError extends Error {
@@ -41,6 +48,14 @@ export class ConversationNotFoundError extends Error {
 export class ConnectionUnavailableError extends Error {
   constructor(id: string) {
     super(`Sem conexão ativa para a conversa: ${id}`);
+  }
+}
+
+// O usuário tem mais de uma janela do vide-code conectada e nenhuma foi
+// escolhida — o chamador precisa perguntar qual usar e reenviar com connectionId.
+export class AmbiguousConnectionError extends Error {
+  constructor(public readonly connections: ConnectionSummary[]) {
+    super('Mais de uma conexão ativa; escolha uma');
   }
 }
 
@@ -62,6 +77,18 @@ export class AgentHub extends EventEmitter {
     };
     this.connections.set(connection.id, connection);
     return connection;
+  }
+
+  setConnectionLabel(connectionId: string, label?: string): void {
+    const connection = this.connections.get(connectionId);
+    if (!connection) return;
+    connection.label = label;
+  }
+
+  listConnections(userId: string): ConnectionSummary[] {
+    return [...this.connections.values()]
+      .filter((c) => c.userId === userId)
+      .map((c) => ({ id: c.id, label: c.label, connectedAt: c.connectedAt }));
   }
 
   removeConnection(connectionId: string): void {
@@ -162,11 +189,23 @@ export class AgentHub extends EventEmitter {
   }
 
   // Ao contrário de sendCommand, não há conversa existente para resolver a conexão:
-  // pega a conexão ativa do próprio usuário. O vide-code cria a aba e confirma via
-  // o evento 'conversation_opened' de sempre; não há resposta síncrona aqui.
-  requestNewConversation(userId: string): void {
-    const connection = [...this.connections.values()].find((c) => c.userId === userId);
-    if (!connection) throw new ConnectionUnavailableError(userId);
+  // pega a conexão do próprio usuário. Com mais de uma janela conectada, exige
+  // connectionId explícito (AmbiguousConnectionError avisa o chamador a escolher).
+  // O vide-code cria a aba e confirma via o evento 'conversation_opened' de
+  // sempre; não há resposta síncrona aqui.
+  requestNewConversation(userId: string, connectionId?: string): void {
+    const userConnections = [...this.connections.values()].filter((c) => c.userId === userId);
+    let connection: AgentConnection | undefined;
+    if (connectionId) {
+      connection = userConnections.find((c) => c.id === connectionId);
+      if (!connection) throw new ConnectionUnavailableError(connectionId);
+    } else if (userConnections.length === 0) {
+      throw new ConnectionUnavailableError(userId);
+    } else if (userConnections.length > 1) {
+      throw new AmbiguousConnectionError(userConnections.map((c) => ({ id: c.id, label: c.label, connectedAt: c.connectedAt })));
+    } else {
+      connection = userConnections[0];
+    }
     const command = { type: 'command' as const, requestId: randomUUID(), operation: 'open_conversation' as const, payload: {} };
     connection.send(JSON.stringify(command));
   }

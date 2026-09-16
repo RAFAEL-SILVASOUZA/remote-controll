@@ -54,6 +54,8 @@ function handleConnection(hub: AgentHub, userId: string, ws: WebSocket): void {
     try {
       if (message.event === 'conversation_opened') {
         hub.openConversation(connection.id, message.payload.id, message.payload.title);
+      } else if (message.event === 'connection_info') {
+        hub.setConnectionLabel(connection.id, message.payload.label);
       } else if (message.event === 'conversation_closed') {
         hub.closeConversation(message.payload.id);
       } else if (message.event === 'snapshot') {
