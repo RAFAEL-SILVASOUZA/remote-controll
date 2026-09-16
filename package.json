@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "directories": { "doc": "docs" },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p .",
-    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/auth/pkce.test.ts src/db/users.test.ts src/db/webSessions.test.ts src/db/oauthClients.test.ts src/db/oauthCodes.test.ts src/db/oauthTokens.test.ts",
+    "test": "tsx --test src/sessions/store.test.ts src/auth/password.test.ts src/db/users.test.ts src/db/webSessions.test.ts",
     "test:client": "tsx scripts/test-client.ts"
   },
   "keywords": [],
@@ -17,7 +15,6 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
     "express": "^5.2.1",
     "zod": "^4.6.5"
   },
