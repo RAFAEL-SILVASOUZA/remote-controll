@@ -90,6 +90,19 @@ try {
   await check('tables scroll locally instead of crushing columns', async () => {
     assert.ok(await evaluate(`(() => { const table=document.querySelector('table'); for(let e=table;e && e.id!=='messages';e=e.parentElement){if(getComputedStyle(e).overflowX==='auto' && e.scrollWidth>e.clientWidth)return true;}return false; })()`));
   });
+  await check('subagent card collapses and expands', async () => {
+    const state = `(() => { const g=document.querySelector('.subagent-group'); const b=g.querySelector('.subagent-group-body'); return { expanded: g.querySelector('.subagent-group-label').getAttribute('aria-expanded'), bodyHeight: b.getBoundingClientRect().height, count: g.querySelector('.subagent-group-count').textContent }; })()`;
+    const open = await evaluate(state);
+    assert.equal(open.expanded, 'true');
+    assert.ok(open.bodyHeight > 0);
+    assert.equal(open.count, '1');
+    await evaluate(`document.querySelector('.subagent-group-label').click()`);
+    const closed = await evaluate(state);
+    assert.equal(closed.expanded, 'false');
+    assert.equal(closed.bodyHeight, 0);
+    await evaluate(`document.querySelector('.subagent-group-label').click()`);
+    assert.ok((await evaluate(state)).bodyHeight > 0);
+  });
   await check('touch actions stay visible and large enough', async () => {
     assert.ok(await evaluate(`[...document.querySelectorAll('.icon-btn,#send-btn,.copy-btn')].every(e=>{const r=e.getBoundingClientRect();return r.width>=44 && r.height>=44 && getComputedStyle(e).opacity!=='0';})`));
   });

@@ -19,7 +19,7 @@ const CHECK_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden=
 // (tool_call/tool_result/diff sharing an id, or task-list updates).
 const activityNodes = new Map();
 const historyIds = new Set();
-const subagentGroups = new Map(); // subagent.id -> group container element
+const subagentGroups = new Map(); // subagent.id -> group body element (holds the activity items)
 let taskListEl = null;
 let streaming = null; // { node, contentEl, parser, written, key }
 let firstRender = true;
@@ -113,18 +113,43 @@ function fillActivityNode(node, entry) {
 
 function targetContainerFor(entry) {
   if (!entry.subagent) return messagesEl;
-  let group = subagentGroups.get(entry.subagent.id);
-  if (!group) {
-    group = document.createElement('div');
+  let body = subagentGroups.get(entry.subagent.id);
+  if (!body) {
+    const group = document.createElement('div');
     group.className = 'subagent-group';
-    const label = document.createElement('div');
-    label.className = 'subagent-group-label';
-    label.textContent = entry.subagent.name || 'Subagente';
-    group.appendChild(label);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'subagent-group-label';
+    toggle.setAttribute('aria-expanded', 'true');
+    const name = document.createElement('span');
+    name.className = 'subagent-group-name';
+    name.textContent = entry.subagent.name || 'Subagente';
+    const count = document.createElement('span');
+    count.className = 'subagent-group-count';
+    toggle.append(chevronIcon(), name, count);
+    body = document.createElement('div');
+    body.className = 'subagent-group-body';
+    toggle.addEventListener('click', () => {
+      const collapsed = group.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+    });
+    // Mantém a contagem de atividades visível mesmo com o card colapsado.
+    new MutationObserver(() => {
+      count.textContent = String(body.childElementCount);
+    }).observe(body, { childList: true });
+    group.append(toggle, body);
     insertAtEnd(group);
-    subagentGroups.set(entry.subagent.id, group);
+    subagentGroups.set(entry.subagent.id, body);
   }
-  return group;
+  return body;
+}
+
+function chevronIcon() {
+  const span = document.createElement('span');
+  span.className = 'subagent-group-chevron';
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return span;
 }
 
 function renderTaskList(entry) {
